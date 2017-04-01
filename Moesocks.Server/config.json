@@ -1,0 +1,6 @@
+﻿{
+  "connectionRouter": {
+    "serverIPAddress": "0.0.0.0",
+    "serverPort": 8863
+  }
+}
