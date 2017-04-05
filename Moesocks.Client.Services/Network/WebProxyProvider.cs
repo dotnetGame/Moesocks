@@ -36,7 +36,7 @@ namespace Moesocks.Client.Services.Network
                 Source = IPAddress.Parse("192.168.0.77"),
                 Destination = IPAddress.Parse("192.168.0.255"),
                 Id = 0x5AC7,
-                Protocol = 0x88,
+                Protocol = 0x11,
                 TTL = 0x80,
                 Payload = new ArraySegment<byte>(new byte[58])
             };

@@ -115,15 +115,17 @@ namespace Moesocks
             CheckSum = 0;
             var p = (ushort*)Unsafe.AsPointer(ref this);
             var times = Unsafe.SizeOf<IPPacketHeader>() / sizeof(ushort);
-            ushort checkSum = 0;
-            for (int i = 0; i < times; i++)
+            int checkSum = 0;
+            unchecked
             {
-                unchecked
+                for (int i = 0; i < times; i++)
                 {
-                    checkSum += ToLittleEndian((ushort)~*p++);
+                    checkSum += *p++;
                 }
+                checkSum = (checkSum >> 16) + (checkSum & 0xffff);
+                checkSum += (checkSum >> 16);
+                CheckSum = (ushort)~checkSum;
             }
-            CheckSum = IPPacketBuilder.ToBigEndian((ushort)~checkSum);
         }
 
         public static ushort ToLittleEndian(ushort value)
