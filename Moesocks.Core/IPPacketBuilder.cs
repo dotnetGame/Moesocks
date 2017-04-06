@@ -51,8 +51,6 @@ namespace Moesocks
         public static uint ToBigEndian(IPAddress address)
         {
             var bytes = address.GetAddressBytes();
-            //if (BitConverter.IsLittleEndian)
-            //    Array.Reverse(bytes);
             return BitConverter.ToUInt32(bytes, 0);
         }
     }

@@ -30,21 +30,7 @@ namespace Moesocks.Client.Services.Network
 
         public async Task ProcessRequest(HttpContext context)
         {
-            var address = IPAddress.Parse("192.168.0.1");
-            var ipBuilder = new IPPacketBuilder
-            {
-                Source = IPAddress.Parse("192.168.0.77"),
-                Destination = IPAddress.Parse("192.168.0.255"),
-                Id = 0x5AC7,
-                Protocol = 0x11,
-                TTL = 0x80,
-                Payload = new ArraySegment<byte>(new byte[58])
-            };
-            var packetLength = ipBuilder.Build(new ArraySegment<byte>(_buffer));
-            var count = await _client.SendToAsync(new ArraySegment<byte>(_buffer, 0, packetLength), SocketFlags.None, _serverEndPoint);
-            using (var bw = File.OpenWrite($"{DateTime.Now.TimeOfDay.ToString("hh\\-mm\\-ss")}.bin"))
-                await bw.WriteAsync(_buffer, 0, packetLength);
-            _logger.LogInformation($"{count} bytes sent.");
+            var request = context.Request;
         }
     }
 }
