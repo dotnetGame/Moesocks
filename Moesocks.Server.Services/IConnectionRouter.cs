@@ -14,6 +14,14 @@ namespace Moesocks.Server.Services
         public int ServerPort { get; set; }
     }
 
+    public class SecuritySettings : IOptions<SecuritySettings>
+    {
+        SecuritySettings IOptions<SecuritySettings>.Value => this;
+
+        public string ServerCertificateFileName { get; set; }
+        public ushort MaxRandomBytesLength { get; set; }
+    }
+
     public interface IConnectionRouter
     {
         void Startup();

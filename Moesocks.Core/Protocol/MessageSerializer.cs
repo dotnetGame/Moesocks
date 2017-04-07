@@ -24,7 +24,7 @@ namespace Moesocks.Protocol
         public const ushort SerializerVersion = 1;
 
         private readonly ISerializationProvider _serializationProvider;
-        private static readonly Dictionary<Protocols.MessageIds, Type> _messageIdToTypes;
+        private static readonly Dictionary<Protocols.MessageType, Type> _messageIdToTypes;
 
         static MessageSerializer()
         {
@@ -60,14 +60,15 @@ namespace Moesocks.Protocol
             return SerializePacket(new PacketHeader
             {
                 ProtocolVersion = Protocols.ProtocolVersion,
-                MessageId = attr.Id,
+                MessageType = attr.Id,
                 MessageVersion = attr.Version
             }, message, stream);
         }
 
-        public async Task<object> Deserialize(Stream stream)
+        public async Task<(uint id, object mesage)> Deserialize(Stream stream)
         {
-            return (await DeserializePacket(stream)).message;
+            (var header, var message) = await DeserializePacket(stream);
+            return (header.Identifier, message);
         }
 
         private async Task SerializePacket(PacketHeader header, object message, Stream stream)
@@ -77,8 +78,9 @@ namespace Moesocks.Protocol
                 using (var bw = new BinaryWriter(headerStream, Encoding.UTF8, true))
                 {
                     bw.Write(header.ProtocolVersion);
-                    bw.Write((ushort)header.MessageId);
+                    bw.Write((ushort)header.MessageType);
                     bw.Write(header.MessageVersion);
+                    bw.Write(header.Identifier);
                 }
                 var headerBin = headerStream.ToArray();
                 await stream.WriteAsync(headerBin, 0, headerBin.Length);
@@ -94,8 +96,9 @@ namespace Moesocks.Protocol
                 header.VerifyAndSetProtocolVersion(br.ReadUInt16());
                 header.VerifyAndSetMessageId(br.ReadUInt16());
                 header.MessageVersion = br.ReadUInt16();
+                header.Identifier = br.ReadUInt32();
             }
-            var message = await DeserializeMessageById(header.MessageId, header.MessageVersion, stream);
+            var message = await DeserializeMessageById(header.MessageType, header.MessageVersion, stream);
             return (header, message);
         }
 
@@ -107,14 +110,14 @@ namespace Moesocks.Protocol
             return await _serializationProvider.Deserialize<T>(stream);
         }
 
-        private Task<object> DeserializeMessageById(Protocols.MessageIds messageId, ushort messageVersion, Stream stream)
+        private Task<object> DeserializeMessageById(Protocols.MessageType messageId, ushort messageVersion, Stream stream)
         {
             if (!_messageIdToTypes.TryGetValue(messageId, out var messageType))
                 throw new NotImplementedException($"Message type for Id: {messageId} is not defined.");
             else
             {
                 var expectedVersion = messageType.GetTypeInfo().GetCustomAttribute<MessageAttribute>().Version;
-                if(expectedVersion != messageVersion)
+                if (expectedVersion != messageVersion)
                     throw new InvalidDataException($"Invalid message version: {messageVersion}, expected: {expectedVersion}.");
                 return (Task<object>)_deserializeMessageGen.MakeGenericMethod(messageType).Invoke(this, new[] { stream });
             }

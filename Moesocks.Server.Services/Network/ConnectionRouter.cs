@@ -1,44 +1,82 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Moesocks.Server.Services.Security;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Moesocks.Server.Services.Network
 {
     class ConnectionRouter : IConnectionRouter
     {
-        private readonly Socket _listener;
+        private readonly TcpListener _listener;
         private readonly ILogger _logger;
+        private readonly SecuritySettings _secSettings;
+        private readonly X509Certificate2 _serverCertificate;
+        private int _eventId;
+        private CancellationTokenSource _cts;
 
-        public ConnectionRouter(IOptions<ConnectionRouterSettings> settings, ILoggerFactory loggerFactory)
+        public ConnectionRouter(IOptions<ConnectionRouterSettings> settings, IOptions<SecuritySettings> securitySettings, ILoggerFactory loggerFactory)
         {
-            _listener = CreateListener(settings.Value);
             _logger = loggerFactory.CreateLogger<ConnectionRouter>();
+            _listener = CreateListener(settings.Value);
+            _secSettings = securitySettings.Value;
+            _serverCertificate = new X509Certificate2(securitySettings.Value.ServerCertificateFileName);
         }
-        const int SIO_RCVALL = unchecked((int)0x98000001);
-        private Socket CreateListener(ConnectionRouterSettings settings)
+
+        private TcpListener CreateListener(ConnectionRouterSettings settings)
         {
-            var socket = new Socket(AddressFamily.InterNetwork, SocketType.Raw, ProtocolType.IP);
-            socket.Bind(new IPEndPoint(IPAddress.Parse(settings.ServerIPAddress), settings.ServerPort));
-            socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.HeaderIncluded, 1);
-            return socket;
+            var listener = new TcpListener(IPAddress.Parse(settings.ServerIPAddress), settings.ServerPort);
+            return listener;
         }
 
         public async void Startup()
         {
-            while (true)
+            _listener.Start();
+            _cts = new CancellationTokenSource();
+            var token = _cts.Token;
+            await Task.Run(async () =>
             {
-                var buffer = new ArraySegment<byte>(new byte[4096]);
-                var result = await _listener.ReceiveFromAsync(buffer, SocketFlags.None, _listener.LocalEndPoint);
-                var remote = (IPEndPoint)result.RemoteEndPoint;
-                using (var bw = File.OpenWrite($"{DateTime.Now.TimeOfDay.ToString("hh\\-mm\\-ss")}.bin"))
-                    await bw.WriteAsync(buffer.Array, 0, result.ReceivedBytes);
-                _logger.LogInformation($"{result.ReceivedBytes} bytes received from {remote}.");
+                while (true)
+                {
+                    token.ThrowIfCancellationRequested();
+                    try
+                    {
+                        DispatchIncoming(await _listener.AcceptTcpClientAsync());
+                    }
+                    catch(Exception ex)
+                    {
+                        _logger.LogError(Interlocked.Increment(ref _eventId), ex, ex.Message);
+                    }
+                }
+            }, _cts.Token);
+        }
+
+        private async void DispatchIncoming(TcpClient tcpClient)
+        {
+            var token = _cts.Token;
+            using (tcpClient)
+            {
+                var transport = new SecureTransportSession(tcpClient, new SecureTransportSessionSettings
+                {
+                    Certificate = _serverCertificate,
+                    MaxRandomBytesLength = _secSettings.MaxRandomBytesLength
+                });
+                var session = new ProxySession(transport);
+                await session.Run(token);
             }
+        }
+
+        public void Stop()
+        {
+            if (_cts != null)
+                _cts.Cancel();
         }
     }
 }

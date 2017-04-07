@@ -10,15 +10,15 @@ using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Tomato.Threading;
 
-namespace Moesocks.Client.Services.Security
+namespace Moesocks.Server.Services.Security
 {
     public class SecureTransportSessionSettings
     {
         public X509Certificate2 Certificate { get; set; }
-        public DnsEndPoint ServerEndPoint { get; set; }
         public ushort MaxRandomBytesLength { get; set; }
     }
 
@@ -26,8 +26,8 @@ namespace Moesocks.Client.Services.Security
     {
         private readonly SecureTransportSessionSettings _settings;
 
-        public SecureTransportSession(SecureTransportSessionSettings settings)
-            :base(new TcpClient(), settings.MaxRandomBytesLength)
+        public SecureTransportSession(TcpClient tcpClient, SecureTransportSessionSettings settings)
+            :base(tcpClient, settings.MaxRandomBytesLength)
         {
             _settings = settings;
         }
