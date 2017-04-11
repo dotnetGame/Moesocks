@@ -6,6 +6,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using System.Linq;
+using Moesocks.Security;
 
 namespace Moesocks.Protocol
 {
@@ -51,24 +52,31 @@ namespace Moesocks.Protocol
 
         }
 
-        public Task Serialize(object message, Stream stream)
+        public async Task Serialize(uint identifier, object message, SecureTransportSessionBase stream)
         {
             var attr = message.GetType().GetTypeInfo().GetCustomAttribute<MessageAttribute>();
             if (attr == null)
                 throw new InvalidOperationException("message doesn't defined a MessageAttribute.");
 
-            return SerializePacket(new PacketHeader
+            using (var packet = stream.BeginWritePacket())
             {
-                ProtocolVersion = Protocols.ProtocolVersion,
-                MessageType = attr.Id,
-                MessageVersion = attr.Version
-            }, message, stream);
+                await SerializePacket(new PacketHeader
+                {
+                    ProtocolVersion = Protocols.ProtocolVersion,
+                    MessageType = attr.Id,
+                    MessageVersion = attr.Version,
+                    Identifier = identifier
+                }, message, stream);
+            }
         }
 
-        public async Task<(uint id, object mesage)> Deserialize(Stream stream)
+        public async Task<(uint id, object mesage)> Deserialize(SecureTransportSessionBase stream)
         {
-            (var header, var message) = await DeserializePacket(stream);
-            return (header.Identifier, message);
+            using (var packet = stream.BeginReadPacket())
+            {
+                (var header, var message) = await DeserializePacket(stream);
+                return (header.Identifier, message);
+            }
         }
 
         private async Task SerializePacket(PacketHeader header, object message, Stream stream)
@@ -86,28 +94,23 @@ namespace Moesocks.Protocol
                 await stream.WriteAsync(headerBin, 0, headerBin.Length);
             }
             await _serializationProvider.Serialize(message, stream);
+            await stream.FlushAsync();
         }
 
+        private readonly byte[] _headerReadBuf = new byte[10];
         private async Task<(PacketHeader header, object message)> DeserializePacket(Stream stream)
         {
             var header = new PacketHeader();
-            using (var br = new BinaryReader(stream, Encoding.UTF8, true))
+            await stream.ReadAsync(_headerReadBuf, 0, _headerReadBuf.Length);
+            using (var br = new BinaryReader(new MemoryStream(_headerReadBuf)))
             {
                 header.VerifyAndSetProtocolVersion(br.ReadUInt16());
-                header.VerifyAndSetMessageId(br.ReadUInt16());
+                header.VerifyAndSetMessageType(br.ReadUInt16());
                 header.MessageVersion = br.ReadUInt16();
                 header.Identifier = br.ReadUInt32();
             }
             var message = await DeserializeMessageById(header.MessageType, header.MessageVersion, stream);
             return (header, message);
-        }
-
-        private static readonly MethodInfo _deserializeMessageGen = typeof(MessageSerializer)
-            .GetRuntimeMethod(nameof(DeserializeMessage), new[] { typeof(Stream) });
-
-        private async Task<object> DeserializeMessage<T>(Stream stream)
-        {
-            return await _serializationProvider.Deserialize<T>(stream);
         }
 
         private Task<object> DeserializeMessageById(Protocols.MessageType messageId, ushort messageVersion, Stream stream)
@@ -119,7 +122,7 @@ namespace Moesocks.Protocol
                 var expectedVersion = messageType.GetTypeInfo().GetCustomAttribute<MessageAttribute>().Version;
                 if (expectedVersion != messageVersion)
                     throw new InvalidDataException($"Invalid message version: {messageVersion}, expected: {expectedVersion}.");
-                return (Task<object>)_deserializeMessageGen.MakeGenericMethod(messageType).Invoke(this, new[] { stream });
+                return _serializationProvider.Deserialize(messageType, stream);
             }
         }
     }

@@ -19,6 +19,7 @@ namespace Moesocks.Server.Services
         SecuritySettings IOptions<SecuritySettings>.Value => this;
 
         public string ServerCertificateFileName { get; set; }
+        public string ServerCertificatePassword { get; set; }
         public ushort MaxRandomBytesLength { get; set; }
     }
 

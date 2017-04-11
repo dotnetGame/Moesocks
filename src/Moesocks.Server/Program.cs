@@ -69,11 +69,12 @@ namespace Moesocks.Server
             serviceProvider.AddOptions();
             serviceProvider.AddLogging();
             serviceProvider.AddConnectionRouter(Configuration.GetSection("connectionRouter"));
+            serviceProvider.AddSecurity(Configuration.GetSection("security"));
         }
 
         private static void Configure(ILoggerFactory loggerFactory)
         {
-            loggerFactory.AddConsole();
+            loggerFactory.AddConsole(Configuration.GetSection("Logging"));
         }
     }
 }

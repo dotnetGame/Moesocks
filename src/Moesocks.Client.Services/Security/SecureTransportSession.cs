@@ -1,4 +1,5 @@
-﻿using Moesocks.Security;
+﻿using Microsoft.Extensions.Logging;
+using Moesocks.Security;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -26,16 +27,17 @@ namespace Moesocks.Client.Services.Security
     {
         private readonly SecureTransportSessionSettings _settings;
 
-        public SecureTransportSession(SecureTransportSessionSettings settings)
-            :base(new TcpClient(), settings.MaxRandomBytesLength)
+        public SecureTransportSession(SecureTransportSessionSettings settings, ILoggerFactory loggerFactory)
+            :base(new TcpClient(), settings.MaxRandomBytesLength, loggerFactory)
         {
             _settings = settings;
         }
 
         protected override async Task<Stream> AuthenticateAsync()
         {
+            await Client.ConnectAsync(_settings.ServerEndPoint.Host, _settings.ServerEndPoint.Port);
             var netStream = new SslStream(Client.GetStream(), true, OnRemoteCertificateValidation, OnLocalCertificationValidation);
-            await netStream.AuthenticateAsServerAsync(_settings.Certificate, true, SslProtocols.Tls12, true);
+            await netStream.AuthenticateAsServerAsync(_settings.Certificate, true, SslProtocols.Tls12, false);
             return netStream;
         }
 

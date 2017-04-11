@@ -1,0 +1,17 @@
+﻿{
+  "Logging": {
+    "IncludeScopes": false,
+    "LogLevel": {
+      "Default": "Debug",
+      "System": "Information",
+      "Microsoft": "Information"
+    }
+  },
+  "WebProxy": {
+    "serverAddress": "127.0.0.1",
+    "serverPort": 8863,
+    "clientCertificateFileName": "E:\\Work\\Repository\\Moesocks\\cert\\sc_client.p12",
+    "clientCertificatePassword": "F*)SYh32f09SDfw3r",
+    "maxRandomBytesLength": 256
+  }
+}

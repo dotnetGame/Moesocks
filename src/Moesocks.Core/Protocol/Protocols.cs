@@ -31,7 +31,7 @@ namespace Moesocks.Protocol
             ProtocolVersion = value;
         }
 
-        public void VerifyAndSetMessageId(ushort value)
+        public void VerifyAndSetMessageType(ushort value)
         {
             if(!Enum.IsDefined(typeof(Protocols.MessageType), value))
                 throw new InvalidDataException($"Invalid message kind: {value}.");

@@ -11,5 +11,6 @@ namespace Moesocks.Protocol
         Task Serialize(object message, Stream stream);
 
         Task<T> Deserialize<T>(Stream stream);
+        Task<object> Deserialize(Type type, Stream stream);
     }
 }

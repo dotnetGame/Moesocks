@@ -1,6 +1,19 @@
 ﻿{
+  "Logging": {
+    "IncludeScopes": false,
+    "LogLevel": {
+      "Default": "Debug",
+      "System": "Information",
+      "Microsoft": "Information"
+    }
+  },
   "connectionRouter": {
     "serverIPAddress": "0.0.0.0",
     "serverPort": 8863
+  },
+  "security": {
+    "serverCertificateFileName": "E:\\Work\\Repository\\Moesocks\\cert\\ra_server.p12",
+    "serverCertificatePassword": "F*)SYh32f09SDfw3r",
+    "maxRandomBytesLength": 256
   }
 }

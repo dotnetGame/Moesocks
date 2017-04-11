@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Security;
@@ -22,11 +23,11 @@ namespace Moesocks.Security
     {
         public SecureTransportSessionState State { get; private set; } = SecureTransportSessionState.Disconnected;
 
-        public override bool CanRead => _netStream.CanRead;
+        public override bool CanRead => true;
 
         public override bool CanSeek => false;
 
-        public override bool CanWrite => _netStream.CanWrite;
+        public override bool CanWrite => true;
 
         public override long Length => throw new NotSupportedException();
 
@@ -37,12 +38,14 @@ namespace Moesocks.Security
         private readonly OperationQueue _readOperationQueue = new OperationQueue(1);
         private readonly OperationQueue _writeOperationQueue = new OperationQueue(1);
         private readonly SecurePrefix _securePrefix;
+        private uint _readSurfix = 0;
+        private uint _writeSurfix = 0;
 
         public TcpClient Client => _tcpClient;
 
-        public SecureTransportSessionBase(TcpClient tcpClient, ushort maxRandomBytesLength)
+        public SecureTransportSessionBase(TcpClient tcpClient, ushort maxRandomBytesLength, ILoggerFactory loggerFactory)
         {
-            _securePrefix = new SecurePrefix(maxRandomBytesLength);
+            _securePrefix = new SecurePrefix(maxRandomBytesLength, loggerFactory);
             _tcpClient = tcpClient;
         }
 
@@ -68,7 +71,11 @@ namespace Moesocks.Security
         {
             try
             {
-                await _securePrefix.WriteAsync(_netStream);
+                if (_writeSurfix != 0)
+                {
+                    await _securePrefix.WriteAsync(_netStream);
+                    --_writeSurfix;
+                }
                 await _netStream.WriteAsync(buffer, offset, count, token);
             }
             catch
@@ -82,7 +89,11 @@ namespace Moesocks.Security
         {
             try
             {
-                await _securePrefix.ReadAsync(_netStream);
+                if (_readSurfix != 0)
+                {
+                    await _securePrefix.ReadAsync(_netStream);
+                    _readSurfix--;
+                }
                 return await _netStream.ReadAsync(buffer, offset, count, token);
             }
             catch
@@ -100,8 +111,6 @@ namespace Moesocks.Security
             try
             {
                 State = SecureTransportSessionState.Disconnected;
-                if (!_tcpClient.Connected)
-                    throw new ObjectDisposedException("tcpclient");
                 State = SecureTransportSessionState.Connecting;
                 _netStream = await AuthenticateAsync();
                 State = SecureTransportSessionState.Connected;
@@ -114,6 +123,46 @@ namespace Moesocks.Security
         }
 
         protected abstract Task<Stream> AuthenticateAsync();
+
+        internal BeginWritePacketScope BeginWritePacket()
+        {
+            return new BeginWritePacketScope(this);
+        }
+
+        internal BeginReadPacketScope BeginReadPacket()
+        {
+            return new BeginReadPacketScope(this);
+        }
+
+        internal struct BeginWritePacketScope : IDisposable
+        {
+            private readonly SecureTransportSessionBase _session;
+            public BeginWritePacketScope(SecureTransportSessionBase session)
+            {
+                _session = session;
+                _session._writeSurfix++;
+            }
+
+            public void Dispose()
+            {
+
+            }
+        }
+
+        internal struct BeginReadPacketScope : IDisposable
+        {
+            private readonly SecureTransportSessionBase _session;
+            public BeginReadPacketScope(SecureTransportSessionBase session)
+            {
+                _session = session;
+                _session._readSurfix++;
+            }
+
+            public void Dispose()
+            {
+
+            }
+        }
 
         public override void Flush()
         {
@@ -133,7 +182,7 @@ namespace Moesocks.Security
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            return ReadAsync(buffer, offset, count).Result;
+            throw new NotSupportedException();
         }
 
         public override long Seek(long offset, SeekOrigin origin)
@@ -148,7 +197,7 @@ namespace Moesocks.Security
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            WriteAsync(buffer, offset, count).Wait();
+            throw new NotSupportedException();
         }
     }
 }

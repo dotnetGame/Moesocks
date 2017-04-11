@@ -20,7 +20,7 @@ namespace Moesocks.Client.Services.Network
         public async Task Invoke(HttpContext context)
         {
             await _proxyProvider.ProcessRequest(context);
-            await _next(context);
+            //await _next(context);
         }
     }
 }

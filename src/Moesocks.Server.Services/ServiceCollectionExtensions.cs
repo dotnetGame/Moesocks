@@ -15,5 +15,10 @@ namespace Moesocks.Server
             services.Configure<ConnectionRouterSettings>(configuration);
             return services.AddScoped<IConnectionRouter, ConnectionRouter>();
         }
+
+        public static IServiceCollection AddSecurity(this IServiceCollection services, IConfiguration configuration)
+        {
+            return services.Configure<SecuritySettings>(configuration);
+        }
     }
 }

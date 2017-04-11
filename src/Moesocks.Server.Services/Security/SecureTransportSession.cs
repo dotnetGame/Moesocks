@@ -1,7 +1,9 @@
-﻿using Moesocks.Security;
+﻿using Microsoft.Extensions.Logging;
+using Moesocks.Security;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Security;
@@ -26,8 +28,8 @@ namespace Moesocks.Server.Services.Security
     {
         private readonly SecureTransportSessionSettings _settings;
 
-        public SecureTransportSession(TcpClient tcpClient, SecureTransportSessionSettings settings)
-            :base(tcpClient, settings.MaxRandomBytesLength)
+        public SecureTransportSession(TcpClient tcpClient, SecureTransportSessionSettings settings, ILoggerFactory loggerFactory)
+            :base(tcpClient, settings.MaxRandomBytesLength, loggerFactory)
         {
             _settings = settings;
         }
@@ -35,7 +37,10 @@ namespace Moesocks.Server.Services.Security
         protected override async Task<Stream> AuthenticateAsync()
         {
             var netStream = new SslStream(Client.GetStream(), true, OnRemoteCertificateValidation, OnLocalCertificationValidation);
-            await netStream.AuthenticateAsServerAsync(_settings.Certificate, true, SslProtocols.Tls12, true);
+            await netStream.AuthenticateAsClientAsync(string.Empty, new X509CertificateCollection
+            {
+                _settings.Certificate
+            }, SslProtocols.Tls12, false);
             return netStream;
         }
 
@@ -46,7 +51,8 @@ namespace Moesocks.Server.Services.Security
 
         private bool OnRemoteCertificateValidation(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
-            return chain.Build((X509Certificate2)certificate);
+            return chain.Build((X509Certificate2)certificate) &&
+                chain.ChainElements.Cast<X509ChainElement>().Any(o => o.Certificate.Equals(_settings.Certificate));
         }
     }
 }

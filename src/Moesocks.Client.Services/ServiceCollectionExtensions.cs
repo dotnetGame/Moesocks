@@ -12,8 +12,11 @@ namespace Moesocks.Client
     {
         WebProxySettings IOptions<WebProxySettings>.Value => this;
 
-        public string ServerIPAddress { get; set; }
+        public string ServerAddress { get; set; }
         public int ServerPort { get; set; }
+        public string ClientCertificateFileName { get; set; }
+        public string ClientCertificatePassword { get; set; }
+        public ushort MaxRandomBytesLength { get; set; }
     }
 
     public static class ServiceCollectionExtensions

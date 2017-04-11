@@ -16,6 +16,7 @@ namespace Moesocks.Server.Services.Network
     class ConnectionRouter : IConnectionRouter
     {
         private readonly TcpListener _listener;
+        private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger _logger;
         private readonly SecuritySettings _secSettings;
         private readonly X509Certificate2 _serverCertificate;
@@ -24,10 +25,11 @@ namespace Moesocks.Server.Services.Network
 
         public ConnectionRouter(IOptions<ConnectionRouterSettings> settings, IOptions<SecuritySettings> securitySettings, ILoggerFactory loggerFactory)
         {
+            _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<ConnectionRouter>();
             _listener = CreateListener(settings.Value);
             _secSettings = securitySettings.Value;
-            _serverCertificate = new X509Certificate2(securitySettings.Value.ServerCertificateFileName);
+            _serverCertificate = new X509Certificate2(securitySettings.Value.ServerCertificateFileName, securitySettings.Value.ServerCertificatePassword);
         }
 
         private TcpListener CreateListener(ConnectionRouterSettings settings)
@@ -67,7 +69,7 @@ namespace Moesocks.Server.Services.Network
                 {
                     Certificate = _serverCertificate,
                     MaxRandomBytesLength = _secSettings.MaxRandomBytesLength
-                });
+                }, _loggerFactory);
                 var session = new ProxySession(transport);
                 await session.Run(token);
             }

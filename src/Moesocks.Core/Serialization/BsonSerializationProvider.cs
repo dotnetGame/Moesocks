@@ -20,19 +20,45 @@ namespace Moesocks.Serialization
 
         public Task<T> Deserialize<T>(Stream stream)
         {
-            using (var writer = new BsonDataReader(stream) { CloseInput = false })
+            using (var reader = new BsonDataReader(stream) { CloseInput = false })
             {
-                return Task.FromResult(_serializer.Deserialize<T>(writer));
+                return Task.FromResult(_serializer.Deserialize<T>(reader));
             }
         }
 
-        public Task Serialize(object message, Stream stream)
+        private readonly byte[] _lengthBuf = new byte[4];
+        public async Task<object> Deserialize(Type type, Stream stream)
         {
-            using (var writer = new BsonDataWriter(stream) { CloseOutput = false })
+            await stream.ReadAsync(_lengthBuf, 0, 4);
+            var data = new byte[BitConverter.ToUInt32(_lengthBuf, 0)];
+            int offset = 0, rest = data.Length;
+            while (rest != 0)
             {
-                _serializer.Serialize(writer, message);
+                var read = await stream.ReadAsync(data, offset, rest);
+                offset += read;
+                rest -= read;
             }
-            return Task.CompletedTask;
+            using (var reader = new BsonDataReader(new MemoryStream(data)))
+            {
+                return _serializer.Deserialize(reader, type);
+            }
+        }
+
+        public async Task Serialize(object message, Stream stream)
+        {
+            using (var memStream = new MemoryStream())
+            {
+                using (var bw = new BinaryWriter(memStream, Encoding.UTF8, true))
+                    bw.Write(0u);
+                using (var writer = new BsonDataWriter(memStream) { CloseOutput = false })
+                {
+                    _serializer.Serialize(writer, message);
+                }
+                var data = memStream.ToArray();
+                using (var bw = new BinaryWriter(new MemoryStream(data)))
+                    bw.Write(data.Length - 4);
+                await stream.WriteAsync(data, 0, data.Length);
+            }
         }
     }
 }

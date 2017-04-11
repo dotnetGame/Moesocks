@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,9 +16,11 @@ namespace Moesocks.Security
         private readonly byte[] _randomWriteBytes;
         private readonly byte[] _randomWriteUint32;
         private readonly RandomNumberGenerator _randomGenerator;
+        private readonly ILogger _logger;
 
-        public SecurePrefix(uint maxRandomBytesLength)
+        public SecurePrefix(uint maxRandomBytesLength, ILoggerFactory loggerFactory)
         {
+            _logger = loggerFactory.CreateLogger<SecurePrefix>();
             _randomReadBytes = new byte[maxRandomBytesLength];
             _randomReadUint32 = new byte[sizeof(uint)];
             _randomWriteBytes = new byte[maxRandomBytesLength];
@@ -33,6 +37,7 @@ namespace Moesocks.Security
 
             await stream.WriteAsync(_randomWriteUint32, 0, _randomWriteUint32.Length);
             await stream.WriteAsync(_randomWriteBytes, 0, randomLength);
+            _logger.LogDebug($"Send {randomLength} bytes random data: {string.Join(" ", _randomWriteBytes.Take(randomLength).Select(o => o.ToString("X")))}.");
         }
 
         public async Task ReadAsync(Stream stream)
@@ -41,7 +46,8 @@ namespace Moesocks.Security
             var randomPrefix = BitConverter.ToUInt32(_randomReadUint32, 0);
             var randomLength = (int)(randomPrefix % _randomReadBytes.Length);
 
-            await stream.ReadAsync(_randomWriteBytes, 0, randomLength);
+            var len = await stream.ReadAsync(_randomReadBytes, 0, randomLength);
+            _logger.LogDebug($"Receive {len} bytes random data: {string.Join(" ", _randomReadBytes.Take(len).Select(o => o.ToString("X")))}.");
         }
     }
 }
