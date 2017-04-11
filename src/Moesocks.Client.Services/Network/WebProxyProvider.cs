@@ -17,6 +17,7 @@ using Tomato.Threading;
 using System.Linq;
 using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Http.Features;
+using System.Runtime.InteropServices;
 
 namespace Moesocks.Client.Services.Network
 {
@@ -93,14 +94,35 @@ namespace Moesocks.Client.Services.Network
         {
             return Task.Run(async () =>
             {
-                while (true)
+                SetGlobalProxy();
+                try
                 {
-                    token.ThrowIfCancellationRequested();
-                    var message = await _messageSerializer.Deserialize(_transport);
-                    DispatchIncomming(message.id, message.mesage);
+                    while (true)
+                    {
+                        token.ThrowIfCancellationRequested();
+                        var message = await _messageSerializer.Deserialize(_transport);
+                        DispatchIncomming(message.id, message.mesage);
+                    }
+                }
+                finally
+                {
+                    ClearGlobalProxy();
                 }
             });
         }
+
+        private void SetGlobalProxy()
+        {
+
+        }
+
+        private void ClearGlobalProxy()
+        {
+
+        }
+
+        [DllImport("wininet.dll")]
+        private static extern bool InternetSetOption(IntPtr hInternet, int dwOption, IntPtr lpBuffer, int dwBufferLength);
 
         private void DispatchIncomming(uint packetId, object message)
         {
