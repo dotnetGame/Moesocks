@@ -8,23 +8,17 @@ using System.Text;
 
 namespace Moesocks.Client
 {
-    public class WebProxySettings : IOptions<WebProxySettings>
-    {
-        WebProxySettings IOptions<WebProxySettings>.Value => this;
-
-        public string ServerAddress { get; set; }
-        public int ServerPort { get; set; }
-        public string ClientCertificateFileName { get; set; }
-        public string ClientCertificatePassword { get; set; }
-        public ushort MaxRandomBytesLength { get; set; }
-    }
-
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddWebProxy(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddConnectionRouter(this IServiceCollection services, IConfiguration configuration)
         {
-            return services.Configure<WebProxySettings>(configuration)
-                .AddSingleton<WebProxyProvider>();
+            return services.Configure<ConnectionRouterSettings>(configuration)
+                .AddSingleton<IConnectionRouter, ConnectionRouter>();
+        }
+
+        public static IServiceCollection AddSecurity(this IServiceCollection services, IConfiguration configuration)
+        {
+            return services.Configure<SecuritySettings>(configuration);
         }
     }
 }

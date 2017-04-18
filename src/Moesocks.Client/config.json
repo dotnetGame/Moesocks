@@ -7,11 +7,17 @@
       "Microsoft": "Information"
     }
   },
-  "WebProxy": {
+  "connectionRouter": {
     "serverAddress": "127.0.0.1",
     "serverPort": 8863,
-    "clientCertificateFileName": "E:\\Work\\Repository\\Moesocks\\cert\\sc_client.p12",
-    "clientCertificatePassword": "F*)SYh32f09SDfw3r",
+    "http": {
+      "localIPAddress": "127.0.0.1",
+      "localPort": 5001
+    }
+  },
+  "security": {
+    "serverCertificateFileName": "E:\\Work\\Repository\\Moesocks\\cert\\sc_client.p12",
+    "serverCertificatePassword": "F*)SYh32f09SDfw3r",
     "maxRandomBytesLength": 256
   }
 }

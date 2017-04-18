@@ -52,7 +52,7 @@ namespace Moesocks.Protocol
 
         }
 
-        public async Task Serialize(uint identifier, object message, SecureTransportSessionBase stream)
+        public async Task Serialize(uint sessionKey, uint identifier, object message, SecureTransportSessionBase stream)
         {
             var attr = message.GetType().GetTypeInfo().GetCustomAttribute<MessageAttribute>();
             if (attr == null)
@@ -65,17 +65,18 @@ namespace Moesocks.Protocol
                     ProtocolVersion = Protocols.ProtocolVersion,
                     MessageType = attr.Id,
                     MessageVersion = attr.Version,
+                    SessionKey = sessionKey,
                     Identifier = identifier
                 }, message, stream);
             }
         }
 
-        public async Task<(uint id, object mesage)> Deserialize(SecureTransportSessionBase stream)
+        public async Task<(uint sessionKey, uint identifier, object mesage)> Deserialize(SecureTransportSessionBase stream)
         {
             using (var packet = stream.BeginReadPacket())
             {
                 (var header, var message) = await DeserializePacket(stream);
-                return (header.Identifier, message);
+                return (header.SessionKey, header.Identifier, message);
             }
         }
 
@@ -88,6 +89,7 @@ namespace Moesocks.Protocol
                     bw.Write(header.ProtocolVersion);
                     bw.Write((ushort)header.MessageType);
                     bw.Write(header.MessageVersion);
+                    bw.Write(header.SessionKey);
                     bw.Write(header.Identifier);
                 }
                 var headerBin = headerStream.ToArray();
@@ -97,7 +99,7 @@ namespace Moesocks.Protocol
             await stream.FlushAsync();
         }
 
-        private readonly byte[] _headerReadBuf = new byte[10];
+        private readonly byte[] _headerReadBuf = new byte[14];
         private async Task<(PacketHeader header, object message)> DeserializePacket(Stream stream)
         {
             var header = new PacketHeader();
@@ -107,6 +109,7 @@ namespace Moesocks.Protocol
                 header.VerifyAndSetProtocolVersion(br.ReadUInt16());
                 header.VerifyAndSetMessageType(br.ReadUInt16());
                 header.MessageVersion = br.ReadUInt16();
+                header.SessionKey = br.ReadUInt32();
                 header.Identifier = br.ReadUInt32();
             }
             var message = await DeserializeMessageById(header.MessageType, header.MessageVersion, stream);

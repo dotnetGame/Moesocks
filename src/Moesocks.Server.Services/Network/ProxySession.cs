@@ -10,8 +10,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Tomato.Threading;
-using HttpRequestMessage = Moesocks.Protocol.Messages.HttpRequestMessage;
-using HttpResponseMessage = Moesocks.Protocol.Messages.HttpResponseMessage;
+using TcpContentMessage = Moesocks.Protocol.Messages.TcpContentMessage;
+using TcpEndOfFileMessage = Moesocks.Protocol.Messages.TcpEndOfFileMessage;
 
 namespace Moesocks.Server.Services.Network
 {
@@ -53,7 +53,7 @@ namespace Moesocks.Server.Services.Network
             }
         }
 
-        private async Task ProcessIncommingMessage(uint id, HttpRequestMessage message)
+        private async Task ProcessIncommingMessage(uint id, TcpContentMessage message)
         {
             var request = new System.Net.Http.HttpRequestMessage(new HttpMethod(message.Method), message.Uri);
             if (message.Body != null)
@@ -71,7 +71,7 @@ namespace Moesocks.Server.Services.Network
                 }
             }
             var response = await _httpClient.SendAsync(request);
-            var responseMessage = new HttpResponseMessage
+            var responseMessage = new TcpEndOfFileMessage
             {
                 StatusCode = (uint)response.StatusCode,
                 Headers = new Dictionary<string, string>()

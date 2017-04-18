@@ -12,8 +12,8 @@ namespace Moesocks.Protocol
 
         public enum MessageType : ushort
         {
-            HttpRequest = 1,
-            HttpResponse = 2
+            TcpContent = 1,
+            TcpEndOfFile = 2
         }
     }
 
@@ -22,6 +22,7 @@ namespace Moesocks.Protocol
         public ushort ProtocolVersion;
         public Protocols.MessageType MessageType;
         public ushort MessageVersion;
+        public uint SessionKey;
         public uint Identifier;
 
         public void VerifyAndSetProtocolVersion(ushort value)

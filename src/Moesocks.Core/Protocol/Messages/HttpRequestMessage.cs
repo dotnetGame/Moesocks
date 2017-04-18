@@ -4,20 +4,17 @@ using System.Text;
 
 namespace Moesocks.Protocol.Messages
 {
-    [Message(Protocols.MessageType.HttpRequest, 1)]
-    public class HttpRequestMessage
+    [Message(Protocols.MessageType.TcpContent, 1)]
+    public class TcpContentMessage
     {
-        public string Uri;
-        public string Method;
-        public Dictionary<string, string> Headers;
-        public byte[] Body;
+        public string Host;
+        public ushort Port;
+        public byte[] Content;
     }
 
-    [Message(Protocols.MessageType.HttpResponse, 1)]
-    public class HttpResponseMessage
+    [Message(Protocols.MessageType.TcpEndOfFile, 1)]
+    public class TcpEndOfFileMessage
     {
-        public uint StatusCode;
-        public Dictionary<string, string> Headers;
-        public byte[] Body;
+
     }
 }
