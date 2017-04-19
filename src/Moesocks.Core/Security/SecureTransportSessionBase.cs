@@ -35,36 +35,25 @@ namespace Moesocks.Security
 
         private readonly TcpClient _tcpClient;
         private Stream _netStream;
-        private readonly OperationQueue _readOperationQueue = new OperationQueue(1);
-        private readonly OperationQueue _writeOperationQueue = new OperationQueue(1);
         private readonly SecurePrefix _securePrefix;
         private uint _readSurfix = 0;
         private uint _writeSurfix = 0;
 
-        public TcpClient Client => _tcpClient;
-
-        public SecureTransportSessionBase(TcpClient tcpClient, ushort maxRandomBytesLength, ILoggerFactory loggerFactory)
+        public SecureTransportSessionBase(ushort maxRandomBytesLength, ILoggerFactory loggerFactory)
         {
             _securePrefix = new SecurePrefix(maxRandomBytesLength, loggerFactory);
-            _tcpClient = tcpClient;
         }
 
-        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken token)
+        public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken token)
         {
-            return _writeOperationQueue.Queue(async () =>
-            {
-                await Connect();
-                await DispatchWriteAsync(buffer, offset, count, token);
-            });
+            await Connect();
+            await DispatchWriteAsync(buffer, offset, count, token);
         }
 
-        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken token)
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken token)
         {
-            return _readOperationQueue.Queue(async () =>
-            {
-                await Connect();
-                return await DispatchReadAsync(buffer, offset, count, token);
-            });
+            await Connect();
+            return await DispatchReadAsync(buffer, offset, count, token);
         }
 
         private async Task DispatchWriteAsync(byte[] buffer, int offset, int count, CancellationToken token)
@@ -166,18 +155,12 @@ namespace Moesocks.Security
 
         public override void Flush()
         {
-            _writeOperationQueue.Queue(() =>
-            {
-                _netStream.Flush();
-            }).Wait();
+            throw new NotSupportedException();
         }
 
         public override Task FlushAsync(CancellationToken cancellationToken)
         {
-            return _writeOperationQueue.Queue(() =>
-            {
-                _netStream.Flush();
-            });
+            return _netStream.FlushAsync();
         }
 
         public override int Read(byte[] buffer, int offset, int count)

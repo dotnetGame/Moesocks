@@ -52,7 +52,7 @@ namespace Moesocks.Server.Services.Network
                     {
                         DispatchIncoming(await _listener.AcceptTcpClientAsync());
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         _logger.LogError(Interlocked.Increment(ref _eventId), ex, ex.Message);
                     }
@@ -62,16 +62,23 @@ namespace Moesocks.Server.Services.Network
 
         private async void DispatchIncoming(TcpClient tcpClient)
         {
-            var token = _cts.Token;
-            using (tcpClient)
+            try
             {
-                var transport = new SecureTransportSession(tcpClient, new SecureTransportSessionSettings
+                var token = _cts.Token;
+                using (tcpClient)
                 {
-                    Certificate = _serverCertificate,
-                    MaxRandomBytesLength = _secSettings.MaxRandomBytesLength
-                }, _loggerFactory);
-                var session = new ProxySession(transport);
-                await session.Run(token);
+                    var transport = new SecureTransportSession(tcpClient, new SecureTransportSessionSettings
+                    {
+                        Certificate = _serverCertificate,
+                        MaxRandomBytesLength = _secSettings.MaxRandomBytesLength
+                    }, _loggerFactory);
+                    var session = new ProxySession(transport, _loggerFactory);
+                    await session.Run(token);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(Interlocked.Increment(ref _eventId), ex, ex.Message);
             }
         }
 

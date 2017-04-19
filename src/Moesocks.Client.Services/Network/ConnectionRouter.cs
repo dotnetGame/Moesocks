@@ -1,7 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moesocks.Client.Services.Security;
+using Moesocks.Protocol;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -9,6 +11,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Tomato.Threading;
 
 namespace Moesocks.Client.Services.Network
 {
@@ -21,6 +24,8 @@ namespace Moesocks.Client.Services.Network
         private readonly HttpProxyProvider _httpProxySession;
         private CancellationTokenSource _cts;
         private readonly ConnectionRouterSettings _settings;
+        private readonly MessageSerializer _serializer = new MessageSerializer();
+        private readonly OperationQueue _writeQueue = new OperationQueue(1);
 
         public ConnectionRouter(IOptions<ConnectionRouterSettings> settings, IOptions<SecuritySettings> securitySettings, ILoggerFactory loggerFactory)
         {
@@ -37,14 +42,35 @@ namespace Moesocks.Client.Services.Network
             _httpProxySession = new HttpProxyProvider(settings.Value.Http, this, _loggerFactory);
         }
 
-        public Task<(uint identifier, object message)> ReceiveAsync(uint sessionKey)
+        private readonly ConcurrentDictionary<uint, Action<uint, object>> _receivers = new ConcurrentDictionary<uint, Action<uint, object>>();
+
+        public void BeginReceive(uint sessionKey, Action<uint, object> receiver)
         {
-            throw new NotImplementedException();
+            _receivers[sessionKey] = receiver;
         }
+
+        public void EndReceive(uint sessionKey)
+        {
+            _receivers.TryRemove(sessionKey, out var receiver);
+        }
+
+        private readonly SemaphoreSlim _semSlim = new SemaphoreSlim(1);
 
         public Task SendAsync(uint sessionKey, uint identifier, object message)
         {
-            throw new NotImplementedException();
+            return _writeQueue.Queue(async() =>
+            {
+                await _semSlim.WaitAsync();
+                try
+                {
+                    _logger.LogDebug($"client: {sessionKey} Sending message {message} to server.");
+                    await _serializer.Serialize(sessionKey, identifier, message, _secureTransport);
+                }
+                finally
+                {
+                    _semSlim.Release();
+                }
+            });
         }
 
         public async void Startup()
@@ -53,13 +79,38 @@ namespace Moesocks.Client.Services.Network
             var token = _cts.Token;
             try
             {
-                IEProxyHelper.SetProxy($@"http={_settings.Http.LocalIPAddress}:{_settings.Http.LocalPort},https={_settings.Http.LocalIPAddress}:{_settings.Http.LocalPort}");
-                var tasks = new[] { _httpProxySession.Startup(token) };
+                //http={_settings.Http.LocalIPAddress}:{_settings.Http.LocalPort},
+                IEProxyHelper.SetProxy($@"https={_settings.Http.LocalIPAddress}:{_settings.Http.LocalPort}");
+                var tasks = new[] { _httpProxySession.Startup(token), BeginReceiveMessages(token) };
                 await Task.WhenAll(tasks);
             }
             finally
             {
                 IEProxyHelper.UnsetProxy();
+            }
+        }
+
+        private async Task BeginReceiveMessages(CancellationToken cancellationToken)
+        {
+            while(true)
+            {
+                try
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    (var sessionKey, var identifier, var message) = await _serializer.Deserialize(_secureTransport);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    _logger.LogDebug($"client: {sessionKey} Received message {message} from server.");
+                    if (_receivers.TryGetValue(sessionKey, out var receiver))
+                        receiver(identifier, message);
+                }
+                catch(OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception)
+                {
+
+                }
             }
         }
 

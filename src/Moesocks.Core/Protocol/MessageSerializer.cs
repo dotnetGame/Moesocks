@@ -71,7 +71,7 @@ namespace Moesocks.Protocol
             }
         }
 
-        public async Task<(uint sessionKey, uint identifier, object mesage)> Deserialize(SecureTransportSessionBase stream)
+        public async Task<(uint sessionKey, uint identifier, object message)> Deserialize(SecureTransportSessionBase stream)
         {
             using (var packet = stream.BeginReadPacket())
             {
@@ -103,7 +103,7 @@ namespace Moesocks.Protocol
         private async Task<(PacketHeader header, object message)> DeserializePacket(Stream stream)
         {
             var header = new PacketHeader();
-            await stream.ReadAsync(_headerReadBuf, 0, _headerReadBuf.Length);
+            await stream.ReadExactAsync(_headerReadBuf, 0, _headerReadBuf.Length);
             using (var br = new BinaryReader(new MemoryStream(_headerReadBuf)))
             {
                 header.VerifyAndSetProtocolVersion(br.ReadUInt16());
@@ -126,6 +126,20 @@ namespace Moesocks.Protocol
                 if (expectedVersion != messageVersion)
                     throw new InvalidDataException($"Invalid message version: {messageVersion}, expected: {expectedVersion}.");
                 return _serializationProvider.Deserialize(messageType, stream);
+            }
+        }
+    }
+
+    static class StreamExtensions
+    {
+        public static async Task ReadExactAsync(this Stream stream, byte[] buffer, int offset, int count)
+        {
+            var rest = count;
+            while (rest != 0)
+            {
+                var read = await stream.ReadAsync(buffer, offset, rest);
+                offset += read;
+                rest -= read;
             }
         }
     }

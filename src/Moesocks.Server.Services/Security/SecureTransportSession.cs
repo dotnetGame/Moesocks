@@ -27,16 +27,18 @@ namespace Moesocks.Server.Services.Security
     public class SecureTransportSession : SecureTransportSessionBase
     {
         private readonly SecureTransportSessionSettings _settings;
+        private readonly TcpClient _tcpClient;
 
         public SecureTransportSession(TcpClient tcpClient, SecureTransportSessionSettings settings, ILoggerFactory loggerFactory)
-            :base(tcpClient, settings.MaxRandomBytesLength, loggerFactory)
+            :base(settings.MaxRandomBytesLength, loggerFactory)
         {
             _settings = settings;
+            _tcpClient = tcpClient;
         }
 
         protected override async Task<Stream> AuthenticateAsync()
         {
-            var netStream = new SslStream(Client.GetStream(), true, OnRemoteCertificateValidation, OnLocalCertificationValidation);
+            var netStream = new SslStream(_tcpClient.GetStream(), true, OnRemoteCertificateValidation, OnLocalCertificationValidation);
             await netStream.AuthenticateAsClientAsync(string.Empty, new X509CertificateCollection
             {
                 _settings.Certificate

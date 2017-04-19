@@ -29,7 +29,7 @@ namespace Moesocks.Serialization
         private readonly byte[] _lengthBuf = new byte[4];
         public async Task<object> Deserialize(Type type, Stream stream)
         {
-            await stream.ReadAsync(_lengthBuf, 0, 4);
+            await stream.ReadExactAsync(_lengthBuf, 0, 4);
             var data = new byte[BitConverter.ToUInt32(_lengthBuf, 0)];
             int offset = 0, rest = data.Length;
             while (rest != 0)
