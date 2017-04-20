@@ -105,11 +105,12 @@ namespace Moesocks.Client.Services.Network
                 }
                 catch(OperationCanceledException)
                 {
+                    _receivers.Clear();
                     break;
                 }
                 catch (Exception)
                 {
-
+                    _receivers.Clear();
                 }
             }
         }

@@ -39,7 +39,7 @@ namespace Moesocks.Client.Services.Security
             _tcpClient?.Dispose();
             var tcpClient = new TcpClient();
             await tcpClient.ConnectAsync(_settings.ServerEndPoint.Host, _settings.ServerEndPoint.Port);
-            var netStream = new SslStream(tcpClient.GetStream(), true, OnRemoteCertificateValidation, OnLocalCertificationValidation);
+            var netStream = new SslStream(tcpClient.GetStream(), false, OnRemoteCertificateValidation, OnLocalCertificationValidation);
             await netStream.AuthenticateAsServerAsync(_settings.Certificate, true, SslProtocols.Tls12, false);
             _tcpClient = tcpClient;
             return netStream;

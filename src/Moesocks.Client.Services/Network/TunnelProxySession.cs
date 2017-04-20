@@ -138,7 +138,11 @@ namespace Moesocks.Client.Services.Network
                 var read = await _remoteStream.ReadAsync(buffer, 0, buffer.Length);
                 if (read == 0)
                 {
-                    await _messageBus.SendAsync(_sessionKey, _identifier++, new TcpEndOfFileMessage());
+                    await _messageBus.SendAsync(_sessionKey, _identifier++, new TcpEndOfFileMessage
+                    {
+                        Host = _targetHost,
+                        Port = _targetPort
+                    });
                     break;
                 }
                 else

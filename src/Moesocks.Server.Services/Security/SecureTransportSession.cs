@@ -38,7 +38,7 @@ namespace Moesocks.Server.Services.Security
 
         protected override async Task<Stream> AuthenticateAsync()
         {
-            var netStream = new SslStream(_tcpClient.GetStream(), true, OnRemoteCertificateValidation, OnLocalCertificationValidation);
+            var netStream = new SslStream(_tcpClient.GetStream(), false, OnRemoteCertificateValidation, OnLocalCertificationValidation);
             await netStream.AuthenticateAsClientAsync(string.Empty, new X509CertificateCollection
             {
                 _settings.Certificate

@@ -58,6 +58,7 @@ namespace Moesocks.Protocol
             if (attr == null)
                 throw new InvalidOperationException("message doesn't defined a MessageAttribute.");
 
+            await stream.ConnectAsync();
             using (var packet = stream.BeginWritePacket())
             {
                 await SerializePacket(new PacketHeader
@@ -73,6 +74,7 @@ namespace Moesocks.Protocol
 
         public async Task<(uint sessionKey, uint identifier, object message)> Deserialize(SecureTransportSessionBase stream)
         {
+            await stream.ConnectAsync();
             using (var packet = stream.BeginReadPacket())
             {
                 (var header, var message) = await DeserializePacket(stream);
@@ -138,6 +140,8 @@ namespace Moesocks.Protocol
             while (rest != 0)
             {
                 var read = await stream.ReadAsync(buffer, offset, rest);
+                if (read == 0)
+                    throw new OperationCanceledException();
                 offset += read;
                 rest -= read;
             }

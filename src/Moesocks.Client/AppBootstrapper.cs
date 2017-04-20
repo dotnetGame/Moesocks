@@ -4,6 +4,9 @@ using Caliburn.Micro;
 using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
+using Moesocks.Client.Views;
+using Moesocks.Client.ViewModels;
+using System.Windows;
 
 namespace Moesocks.Client
 {
@@ -66,10 +69,19 @@ namespace Moesocks.Client
             _connectionRouter?.Stop();
         }
 
+        private FrameworkElement _trayIcon;
+
         protected override void OnStartup(object sender, System.Windows.StartupEventArgs e)
         {
+            EnableTrayIcon();
             StartConnectionRouter();
-            DisplayRootViewFor<IShell>();
+            //DisplayRootViewFor<IShell>();
+        }
+
+        private void EnableTrayIcon()
+        {
+            _trayIcon = new Views.SystemTrayIconView();
+            ViewModelBinder.Bind(IoC.Get<SystemTrayIconViewModel>(), _trayIcon, null);
         }
 
         private void StartConnectionRouter()

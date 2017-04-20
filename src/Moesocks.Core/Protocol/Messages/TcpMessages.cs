@@ -15,6 +15,7 @@ namespace Moesocks.Protocol.Messages
     [Message(Protocols.MessageType.TcpEndOfFile, 1)]
     public class TcpEndOfFileMessage
     {
-
+        public string Host;
+        public ushort Port;
     }
 }

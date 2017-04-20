@@ -37,7 +37,7 @@ namespace Moesocks.Security
 
             await stream.WriteAsync(_randomWriteUint32, 0, _randomWriteUint32.Length);
             await stream.WriteAsync(_randomWriteBytes, 0, randomLength);
-            _logger.LogDebug($"Send {randomLength} bytes random data: {string.Join(" ", _randomWriteBytes.Take(randomLength).Select(o => o.ToString("X")))}.");
+            _logger.LogDebug($"Send {randomLength} bytes random data.");
         }
 
         public async Task ReadAsync(Stream stream)
@@ -47,7 +47,7 @@ namespace Moesocks.Security
             var randomLength = (int)(randomPrefix % _randomReadBytes.Length);
 
             var len = await stream.ReadAsync(_randomReadBytes, 0, randomLength);
-            _logger.LogDebug($"Receive {len} bytes random data: {string.Join(" ", _randomReadBytes.Take(len).Select(o => o.ToString("X")))}.");
+            _logger.LogDebug($"Receive {len} bytes random data.");
         }
     }
 }

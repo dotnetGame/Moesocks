@@ -33,26 +33,29 @@ namespace Moesocks.Security
 
         public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
 
-        private readonly TcpClient _tcpClient;
         private Stream _netStream;
         private readonly SecurePrefix _securePrefix;
+        private readonly ILogger _logger;
         private uint _readSurfix = 0;
         private uint _writeSurfix = 0;
 
         public SecureTransportSessionBase(ushort maxRandomBytesLength, ILoggerFactory loggerFactory)
         {
+            _logger = loggerFactory.CreateLogger<SecureTransportSessionBase>();
             _securePrefix = new SecurePrefix(maxRandomBytesLength, loggerFactory);
         }
 
         public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken token)
         {
-            await Connect();
+            if (State != SecureTransportSessionState.Connected)
+                throw new InvalidOperationException();
             await DispatchWriteAsync(buffer, offset, count, token);
         }
 
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken token)
         {
-            await Connect();
+            if (State != SecureTransportSessionState.Connected)
+                throw new InvalidOperationException();
             return await DispatchReadAsync(buffer, offset, count, token);
         }
 
@@ -92,7 +95,7 @@ namespace Moesocks.Security
             }
         }
 
-        private async Task Connect()
+        public async Task ConnectAsync()
         {
             if (State == SecureTransportSessionState.Connected ||
                 State == SecureTransportSessionState.Connecting)
@@ -100,9 +103,13 @@ namespace Moesocks.Security
             try
             {
                 State = SecureTransportSessionState.Disconnected;
+                _readSurfix = _writeSurfix = 0;
                 State = SecureTransportSessionState.Connecting;
+                _logger.LogInformation($"Connecting...");
+                _netStream?.Dispose();
                 _netStream = await AuthenticateAsync();
                 State = SecureTransportSessionState.Connected;
+                _logger.LogInformation($"Connected");
             }
             catch
             {
@@ -181,6 +188,15 @@ namespace Moesocks.Security
         public override void Write(byte[] buffer, int offset, int count)
         {
             throw new NotSupportedException();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _netStream?.Dispose();
+                _netStream = null;
+            }
         }
     }
 }

@@ -18,12 +18,9 @@ namespace Moesocks.Serialization
             _serializer = new JsonSerializer();
         }
 
-        public Task<T> Deserialize<T>(Stream stream)
+        public async Task<T> Deserialize<T>(Stream stream)
         {
-            using (var reader = new BsonDataReader(stream) { CloseInput = false })
-            {
-                return Task.FromResult(_serializer.Deserialize<T>(reader));
-            }
+            return (T)await Deserialize(typeof(T), stream);
         }
 
         private readonly byte[] _lengthBuf = new byte[4];

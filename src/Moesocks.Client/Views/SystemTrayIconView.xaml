@@ -1,0 +1,15 @@
+﻿<taskbar:TaskbarIcon x:Class="Moesocks.Client.Views.SystemTrayIconView"
+                     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+                     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                     xmlns:taskbar="http://www.hardcodet.net/taskbar"
+                     xmlns:cal="http://www.caliburnproject.org"     
+                     mc:Ignorable="d" d:DesignWidth="197.039" d:DesignHeight="114.635"
+                     IconSource="../Assets/shadowsocks.ico" ToolTipText="Moesocks">
+    <taskbar:TaskbarIcon.ContextMenu>
+        <ContextMenu>
+            <MenuItem Header="退出(_X)" cal:Message.Attach="Exit"/>
+        </ContextMenu>
+    </taskbar:TaskbarIcon.ContextMenu>
+</taskbar:TaskbarIcon>

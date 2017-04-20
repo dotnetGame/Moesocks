@@ -45,6 +45,7 @@ namespace Moesocks.Server.Services.Network
             var token = _cts.Token;
             await Task.Run(async () =>
             {
+                _logger.LogInformation($"Start listening at {(IPEndPoint)_listener.LocalEndpoint}...");
                 while (true)
                 {
                     token.ThrowIfCancellationRequested();
@@ -67,14 +68,22 @@ namespace Moesocks.Server.Services.Network
                 var token = _cts.Token;
                 using (tcpClient)
                 {
-                    var transport = new SecureTransportSession(tcpClient, new SecureTransportSessionSettings
+                    _logger.LogInformation($"Accept client from: {(IPEndPoint)tcpClient.Client.RemoteEndPoint}.");
+                    using (var transport = new SecureTransportSession(tcpClient, new SecureTransportSessionSettings
                     {
                         Certificate = _serverCertificate,
                         MaxRandomBytesLength = _secSettings.MaxRandomBytesLength
-                    }, _loggerFactory);
-                    var session = new ProxySession(transport, _loggerFactory);
-                    await session.Run(token);
+                    }, _loggerFactory))
+                    {
+                        var session = new ProxySession(transport, _loggerFactory);
+                        await session.Run(token);
+                    }
                 }
+                _logger.LogInformation($"Closed client from: {(IPEndPoint)tcpClient.Client.RemoteEndPoint}.");
+            }
+            catch(ObjectDisposedException)
+            {
+
             }
             catch (Exception ex)
             {

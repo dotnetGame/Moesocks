@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Moesocks.Client.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -31,7 +32,10 @@ namespace Moesocks.Client
             services.AddOptions();
             services.AddSingleton<IWindowManager>(new WindowManager());
             services.AddSingleton<IEventAggregator>(new EventAggregator());
+
             services.AddTransient<IShell, ShellViewModel>();
+            services.AddTransient<SystemTrayIconViewModel>();
+
             services.AddConnectionRouter(Configuration.GetSection("connectionRouter"));
             services.AddSecurity(Configuration.GetSection("security"));
         }

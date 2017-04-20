@@ -21,7 +21,7 @@ namespace Moesocks.Server.Services.Network
         private readonly SecureTransportSession _transport;
         private readonly ILogger _logger;
         private readonly MessageSerializer _messageSerializer;
-        private readonly ConcurrentDictionary<TcpClientKey, TcpClient> _tcpClients = new ConcurrentDictionary<TcpClientKey, TcpClient>();
+        private readonly ConcurrentDictionary<TcpClientKey, TcpClientEntry> _tcpClients = new ConcurrentDictionary<TcpClientKey, TcpClientEntry>();
         private readonly OperationQueue _responseDispatcher = new OperationQueue(1);
         private uint _identifier;
 
@@ -41,7 +41,6 @@ namespace Moesocks.Server.Services.Network
                 {
                     var message = await _messageSerializer.Deserialize(_transport);
                     _logger.LogDebug($"Received message {message.message} from client: {message.sessionKey}.");
-                    if (message.message is TcpEndOfFileMessage) break;
                     DispatchIncomming(message.sessionKey, message.identifier, message.message);
                 }
             });
@@ -65,6 +64,12 @@ namespace Moesocks.Server.Services.Network
             await client.GetStream().WriteAsync(message.Content, 0, message.Content.Length);
         }
 
+        private async Task ProcessIncommingMessage(uint sessionKey, uint identifier, TcpEndOfFileMessage message)
+        {
+            var client = await GetTcpClient(message.Host, message.Port, sessionKey);
+            client.Client.Shutdown(SocketShutdown.Send);
+        }
+
         private readonly SemaphoreSlim _semSlim = new SemaphoreSlim(1);
         private async Task SendResponse(uint session, object message)
         {
@@ -74,8 +79,8 @@ namespace Moesocks.Server.Services.Network
                 await _semSlim.WaitAsync();
                 try
                 {
-                    _logger.LogDebug($"Sending message {message} to client: {session}.");
                     await _messageSerializer.Serialize(session, id, message, _transport);
+                    _logger.LogDebug($"Sent message {message} to client: {session}.");
                 }
                 finally
                 {
@@ -87,13 +92,27 @@ namespace Moesocks.Server.Services.Network
         private async Task<TcpClient> GetTcpClient(string host, int port, uint desiredSession)
         {
             var key = new TcpClientKey { Host = host, Port = port, Session = desiredSession };
-            var client = _tcpClients.GetOrAdd(key, k => new TcpClient());
-            if (!client.Connected)
+            var client = _tcpClients.GetOrAdd(key, k => new TcpClientEntry { Client = new TcpClient() });
+            if (!client.Client.Connected)
             {
-                await client.ConnectAsync(host, port);
-                ReceiveRemoteResponse(desiredSession, host, port, client.GetStream());
+                try
+                {
+                    await client.Client.ConnectAsync(host, port);
+                }
+                catch
+                {
+                    client.Client.Dispose();
+                    client.Client = new TcpClient();
+                    await client.Client.ConnectAsync(host, port);
+                }
+                ReceiveRemoteResponse(desiredSession, host, port, client.Client.GetStream());
             }
-            return client;
+            return client.Client;
+        }
+
+        class TcpClientEntry
+        {
+            public TcpClient Client { get; set; }
         }
 
         private async void ReceiveRemoteResponse(uint session, string host, int port, Stream stream)
@@ -105,7 +124,14 @@ namespace Moesocks.Server.Services.Network
                     var buffer = new byte[4096];
                     var read = await stream.ReadAsync(buffer, 0, buffer.Length);
                     if (read == 0)
-                        await SendResponse(session, new TcpEndOfFileMessage());
+                    {
+                        await SendResponse(session, new TcpEndOfFileMessage
+                        {
+                            Host = host,
+                            Port = (ushort)port
+                        });
+                        break;
+                    }
                     else
                     {
                         var dst = new byte[read];
