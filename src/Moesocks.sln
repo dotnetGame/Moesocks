@@ -13,6 +13,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moesocks.Client", "Moesocks
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moesocks.Client.Services", "Moesocks.Client.Services\Moesocks.Client.Services.csproj", "{3AABA3AF-1BB0-472F-9865-B3BD2EAE9A08}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moesocks.ClientMaker", "Tools\Moesocks.ClientMaker\Moesocks.ClientMaker.csproj", "{621D5A2D-CE70-4045-A245-54223B9CBF8B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{2E76EAEE-303D-4461-8C35-8D74D306C697}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,8 +43,15 @@ Global
 		{3AABA3AF-1BB0-472F-9865-B3BD2EAE9A08}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3AABA3AF-1BB0-472F-9865-B3BD2EAE9A08}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3AABA3AF-1BB0-472F-9865-B3BD2EAE9A08}.Release|Any CPU.Build.0 = Release|Any CPU
+		{621D5A2D-CE70-4045-A245-54223B9CBF8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{621D5A2D-CE70-4045-A245-54223B9CBF8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{621D5A2D-CE70-4045-A245-54223B9CBF8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{621D5A2D-CE70-4045-A245-54223B9CBF8B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{621D5A2D-CE70-4045-A245-54223B9CBF8B} = {2E76EAEE-303D-4461-8C35-8D74D306C697}
 	EndGlobalSection
 EndGlobal

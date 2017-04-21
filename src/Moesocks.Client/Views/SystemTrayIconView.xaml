@@ -6,9 +6,11 @@
                      xmlns:taskbar="http://www.hardcodet.net/taskbar"
                      xmlns:cal="http://www.caliburnproject.org"     
                      mc:Ignorable="d" d:DesignWidth="197.039" d:DesignHeight="114.635"
-                     IconSource="../Assets/shadowsocks.ico" ToolTipText="Moesocks">
+                     IconSource="../Assets/moesocks.ico" ToolTipText="Moesocks">
     <taskbar:TaskbarIcon.ContextMenu>
         <ContextMenu>
+            <MenuItem Header="显示主窗口(_M)..." cal:Message.Attach="DisplayMainWindow"/>
+            <Separator/>
             <MenuItem Header="退出(_X)" cal:Message.Attach="Exit"/>
         </ContextMenu>
     </taskbar:TaskbarIcon.ContextMenu>

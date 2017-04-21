@@ -92,7 +92,8 @@ namespace Moesocks.Client.Services.Network
 
         private async Task BeginReceiveMessages(CancellationToken cancellationToken)
         {
-            while(true)
+            _logger.LogInformation($"Proxy started.");
+            while (true)
             {
                 try
                 {
@@ -106,6 +107,7 @@ namespace Moesocks.Client.Services.Network
                 catch(OperationCanceledException)
                 {
                     _receivers.Clear();
+                    _logger.LogWarning($"Proxy stopped.");
                     break;
                 }
                 catch (Exception)

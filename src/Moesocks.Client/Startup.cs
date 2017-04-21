@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Moesocks.Client.Logging;
 using Moesocks.Client.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -35,6 +36,8 @@ namespace Moesocks.Client
 
             services.AddTransient<IShell, ShellViewModel>();
             services.AddTransient<SystemTrayIconViewModel>();
+            services.AddTransient<Areas.Pages.ViewModels.LoggingViewModel>();
+            services.AddSingleton<FlowDocumentLoggerProvider>();
 
             services.AddConnectionRouter(Configuration.GetSection("connectionRouter"));
             services.AddSecurity(Configuration.GetSection("security"));
@@ -48,9 +51,10 @@ namespace Moesocks.Client
             method.Invoke(this, @params.ToArray());
         }
 
-        private void Configure(ILoggerFactory loggerFactory)
+        private void Configure(ILoggerFactory loggerFactory, FlowDocumentLoggerProvider flowDocLogger)
         {
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
+            loggerFactory.AddProvider(flowDocLogger);
             loggerFactory.AddDebug();
         }
     }
