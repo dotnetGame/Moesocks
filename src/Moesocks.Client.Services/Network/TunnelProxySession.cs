@@ -42,9 +42,16 @@ namespace Moesocks.Client.Services.Network
 
         public async Task Run()
         {
-            await SendOkResponse();
-            var tasks = new[] { RunMessageReceive(), RunClientRead() };
-            await Task.WhenAll(tasks);
+            try
+            {
+                await SendOkResponse();
+                var tasks = new[] { RunMessageReceive(), RunClientRead() };
+                await Task.WhenAll(tasks);
+            }
+            finally
+            {
+                _messageBus.EndReceive(_sessionKey);
+            }
         }
 
         private const string _okResponse = "HTTP/1.1 200 OK\r\n\r\n";
@@ -53,11 +60,11 @@ namespace Moesocks.Client.Services.Network
         private async Task SendOkResponse()
         {
             var eor = FindEndOfRequest(_takenBytes, _takenBytes.Length);
-            if(eor == -1)
+            if (eor == -1)
             {
                 var buffer = new byte[512];
                 int read = 0;
-                while(eor == -1)
+                while (eor == -1)
                 {
                     read = await _remoteStream.ReadAsync(buffer, 0, buffer.Length);
                     if (read == 0)
@@ -83,7 +90,7 @@ namespace Moesocks.Client.Services.Network
                 bool next = false;
                 for (int i = 0; i < _eor.Length; i++)
                 {
-                    if(content[first + i] != _eor[i])
+                    if (content[first + i] != _eor[i])
                     {
                         next = true;
                         break;
@@ -122,7 +129,7 @@ namespace Moesocks.Client.Services.Network
 
         private async Task RunClientRead()
         {
-            if(_takenBytes.Length != 0)
+            if (_takenBytes.Length != 0)
             {
                 await _messageBus.SendAsync(_sessionKey, _identifier++, new TcpContentMessage
                 {

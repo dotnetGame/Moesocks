@@ -9,6 +9,18 @@
                    SaveWindowPosition="True"
                    EnableDWMDropShadow="True" ShowIconOnTitleBar="True"
                    Height="338" Width="601" Title="Moesocks">
+    <metro:MetroWindow.IconTemplate>
+        <DataTemplate>
+            <Grid Width="{TemplateBinding Width}"
+                 Height="{TemplateBinding Height}"
+                 Margin="4 4 0 4"
+                 Background="Transparent"
+                 RenderOptions.EdgeMode="Aliased"
+                 RenderOptions.BitmapScalingMode="HighQuality">
+                <Image Source="../Assets/moesocks.ico"/>
+            </Grid>
+        </DataTemplate>
+    </metro:MetroWindow.IconTemplate>
     <dockablz:Layout>
         <dragablz:TabablzControl HeaderMemberPath="Title" ItemsSource="{Binding Pages}">
             <dragablz:TabablzControl.HeaderItemTemplate>

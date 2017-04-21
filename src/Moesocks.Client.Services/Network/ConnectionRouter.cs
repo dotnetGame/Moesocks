@@ -66,6 +66,11 @@ namespace Moesocks.Client.Services.Network
                     _logger.LogDebug($"client: {sessionKey} Sending message {message} to server.");
                     await _serializer.Serialize(sessionKey, identifier, message, _secureTransport);
                 }
+                catch(Exception ex)
+                {
+                    _logger.LogError(default(EventId), ex.Message, ex);
+                    throw;
+                }
                 finally
                 {
                     _semSlim.Release();
@@ -110,9 +115,9 @@ namespace Moesocks.Client.Services.Network
                     _logger.LogWarning($"Proxy stopped.");
                     break;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    _receivers.Clear();
+                    _logger.LogError(default(EventId), ex.Message, ex);
                 }
             }
         }

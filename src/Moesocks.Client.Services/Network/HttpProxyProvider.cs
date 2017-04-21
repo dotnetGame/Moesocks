@@ -81,6 +81,10 @@ namespace Moesocks.Client.Services.Network
                     }
                 }
             }
+            catch(InvalidDataException)
+            {
+
+            }
             catch (Exception ex)
             {
                 _logger.LogError(Interlocked.Increment(ref _eventId), ex, ex.Message);
