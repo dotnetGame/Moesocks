@@ -255,6 +255,7 @@
     </ApplicationDefinition>
     <Compile Include="AppBootstrapper.cs" />
     <Compile Include="Areas\Pages\ViewModels\LoggingViewModel.cs" />
+    <Compile Include="Areas\Pages\ViewModels\SettingsViewModel.cs" />
     <Compile Include="IShell.cs" />
     <Compile Include="Logging\FlowDocumentLoggerProvider.cs" />
     <Compile Include="ViewModels\ShellViewModel.cs" />
@@ -268,6 +269,10 @@
       <DependentUpon>SystemTrayIconView.xaml</DependentUpon>
     </Compile>
     <Page Include="Areas\Pages\Views\LoggingView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Areas\Pages\Views\SettingsView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

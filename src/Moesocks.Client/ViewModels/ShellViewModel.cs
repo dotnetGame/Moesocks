@@ -10,9 +10,10 @@ namespace Moesocks.Client.ViewModels
 
         public ShellViewModel()
         {
-            Pages = new[]
+            Pages = new object[]
             {
-                IoC.Get<LoggingViewModel>()
+                IoC.Get<LoggingViewModel>(),
+                IoC.Get<SettingsViewModel>()
             };
         }
     }

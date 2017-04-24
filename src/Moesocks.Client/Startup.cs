@@ -37,6 +37,7 @@ namespace Moesocks.Client
             services.AddTransient<IShell, ShellViewModel>();
             services.AddTransient<SystemTrayIconViewModel>();
             services.AddTransient<Areas.Pages.ViewModels.LoggingViewModel>();
+            services.AddTransient<Areas.Pages.ViewModels.SettingsViewModel>();
             services.AddSingleton<FlowDocumentLoggerProvider>();
 
             services.AddConnectionRouter(Configuration.GetSection("connectionRouter"));

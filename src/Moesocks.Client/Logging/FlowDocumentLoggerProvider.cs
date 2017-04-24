@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,10 +15,11 @@ namespace Moesocks.Client.Logging
     {
         public event EventHandler Added;
         public Paragraph Paragraph { get; } = new Paragraph();
+        private readonly Stopwatch _watch = new Stopwatch();
 
         public FlowDocumentLoggerProvider()
         {
-
+            _watch.Start();
         }
 
         public ILogger CreateLogger(string categoryName)
@@ -34,12 +36,12 @@ namespace Moesocks.Client.Logging
                 var color = LogLevelToBrush(logLevel);
                 var inlines = new Inline[]
                 {
-                    new Run($"{LogLevelToString(logLevel)}:\t{categoryName}[{eventId}]")
+                    new Run($"[{_watch.Elapsed.ToString(@"hh\:mm\:ss")}] {LogLevelToString(logLevel)}:\t{categoryName}[{eventId}]")
                     {
                         Foreground = color
                     },
                     new LineBreak(),
-                    new Run($"\t{formatter(state, exception)}")
+                    new Run($"\t\t{formatter(state, exception)}")
                     {
                         Foreground = color
                     },
@@ -104,6 +106,7 @@ namespace Moesocks.Client.Logging
             Execute.OnUIThread(() =>
             {
                 Paragraph.Inlines.Clear();
+                _watch.Stop();
             });
         }
 
