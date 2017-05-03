@@ -7,6 +7,10 @@ using System.Threading.Tasks;
 using Moesocks.Client.Views;
 using Moesocks.Client.ViewModels;
 using System.Windows;
+using System.Threading;
+using Moesocks.Client.Services;
+using Hardcodet.Wpf.TaskbarNotification;
+using System.Diagnostics;
 
 namespace Moesocks.Client
 {
@@ -14,9 +18,18 @@ namespace Moesocks.Client
     {
         public IServiceProvider ServiceProvider { get; private set; }
         private IConnectionRouter _connectionRouter;
+        private readonly Mutex _singletonMutex;
 
         public AppBootstrapper()
         {
+            bool createdNew;
+            _singletonMutex = new Mutex(true, "Moesocks Client", out createdNew);
+            if(!createdNew)
+            {
+                MessageBox.Show("Moesocks 已经启动。", "Moesocks", MessageBoxButton.OK, MessageBoxImage.Information);
+                Environment.Exit(0);
+            }
+
             Initialize();
             base.Application.DispatcherUnhandledException += Application_DispatcherUnhandledException;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
@@ -69,18 +82,39 @@ namespace Moesocks.Client
             _connectionRouter?.Stop();
         }
 
-        private FrameworkElement _trayIcon;
+        private SystemTrayIconView _trayIcon;
 
         protected override void OnStartup(object sender, System.Windows.StartupEventArgs e)
         {
             EnableTrayIcon();
             StartConnectionRouter();
+            StartUpdateService();
             //DisplayRootViewFor<IShell>();
+        }
+
+        private IUpdateService _updateService;
+        private void StartUpdateService()
+        {
+            _updateService = IoC.Get<IUpdateService>();
+            _updateService.NewReleaseFound += updateService_NewReleaseFound;
+            _updateService.Startup();
+        }
+
+        private void updateService_NewReleaseFound(object sender, NewReleaseFoundEventArgs e)
+        {
+            RoutedEventHandler balloonTipClicked = null;
+            balloonTipClicked = (s, _) =>
+            {
+                _trayIcon.TrayBalloonTipClicked -= balloonTipClicked;
+                Process.Start("explorer.exe", string.Format("/select,\"{0}\"", e.UpdatePack.FullName));
+            };
+            _trayIcon.TrayBalloonTipClicked += balloonTipClicked;
+            _trayIcon.ShowBalloonTip("发现新版本", $"发现新版本 {e.Version}， 点击这里立即更新。", BalloonIcon.Info);
         }
 
         private void EnableTrayIcon()
         {
-            _trayIcon = new Views.SystemTrayIconView();
+            _trayIcon = new SystemTrayIconView();
             ViewModelBinder.Bind(IoC.Get<SystemTrayIconViewModel>(), _trayIcon, null);
         }
 

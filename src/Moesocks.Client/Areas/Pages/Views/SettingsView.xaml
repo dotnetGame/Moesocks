@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:cal="http://www.caliburnproject.org"
              xmlns:local="clr-namespace:Moesocks.Client.Areas.Pages.Views"
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="508">
@@ -47,19 +48,17 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" MaxWidth="330"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Row="0" VerticalAlignment="Center" Margin="0 0 8 0" Style="{StaticResource MaterialDesignBody1TextBlock}">启用自动更新</TextBlock>
-            <ToggleButton Grid.Row="0" Grid.Column="1"/>
-            <TextBlock Grid.Row="1" VerticalAlignment="Center" Margin="16 0 8 0" Style="{StaticResource MaterialDesignBody1TextBlock}">允许使用流量更新</TextBlock>
-            <ToggleButton Grid.Row="1" Grid.Column="1"/>
-            <TextBlock Grid.Row="2" Style="{StaticResource MaterialDesignBody1TextBlock}" Margin="0 8" VerticalAlignment="Center">模式选择</TextBlock>
-            <RadioButton Grid.Row="3" Margin="16 8 8 8">全局模式</RadioButton>
-            <RadioButton Grid.Row="4" Margin="16 8 8 8">PAC 模式</RadioButton>
-            <Grid Grid.Row="5">
+            <!--<TextBlock Style="{StaticResource MaterialDesignBody1TextBlock}" Margin="0 8" VerticalAlignment="Center">模式选择</TextBlock>
+            <RadioButton Grid.Row="1" Margin="16 8 8 8">全局模式</RadioButton>
+            <RadioButton Grid.Row="2" Margin="16 8 8 8">PAC 模式</RadioButton>
+            <Grid Grid.Row="3">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
@@ -67,7 +66,17 @@
                 <TextBlock Margin="38 0 8 0" VerticalAlignment="Center">PAC 地址</TextBlock>
                 <TextBox Grid.Column="1"/>
             </Grid>
-            <Button Grid.Row="5" Grid.Column="1" Style="{StaticResource MaterialDesignFlatButton}">立即更新</Button>
+            <Button Grid.Row="3" Grid.Column="1" Style="{StaticResource MaterialDesignFlatButton}">立即更新</Button>-->
+            <TextBlock Grid.Row="4" Style="{StaticResource MaterialDesignBody1TextBlock}" Margin="0 8" VerticalAlignment="Center">关于</TextBlock>
+            <StackPanel Grid.Row="5" Orientation="Horizontal">
+                <TextBlock VerticalAlignment="Center" Margin="0 0 8 0">当前版本</TextBlock>
+                <TextBlock VerticalAlignment="Center" Margin="0 0 8 0" Text="{Binding ProductInformation.ProductVersion}"/>
+            </StackPanel>
+            <!--<Button Grid.Row="5" Grid.Column="1" cal:Message.Attach="CheckUpdate">立即检查更新</Button>-->
+            <TextBlock Grid.Row="6" VerticalAlignment="Center" Margin="0 0 8 0">启用自动更新</TextBlock>
+            <ToggleButton Grid.Row="6" Grid.Column="1" IsChecked="{Binding Update.Enabled, Mode=TwoWay}"/>
+            <TextBlock Grid.Row="7" VerticalAlignment="Center" Margin="16 0 8 0">允许使用流量更新</TextBlock>
+            <ToggleButton Grid.Row="7" Grid.Column="1" IsChecked="{Binding Update.UseByteBasisNetwork, Mode=TwoWay}"/>
         </Grid>
     </ScrollViewer>
 </UserControl>

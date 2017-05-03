@@ -31,6 +31,8 @@ namespace Moesocks.Client
         {
             services.AddLogging();
             services.AddOptions();
+            services.AddAppConfiguration("config.json");
+            services.AddSingleton<IProductInformation, ProductInformation>();
             services.AddSingleton<IWindowManager>(new WindowManager());
             services.AddSingleton<IEventAggregator>(new EventAggregator());
 
@@ -42,6 +44,7 @@ namespace Moesocks.Client
 
             services.AddConnectionRouter(Configuration.GetSection("connectionRouter"));
             services.AddSecurity(Configuration.GetSection("security"));
+            services.AddUpdate();
         }
 
         public void DoConfigure(IServiceProvider serviceProvider)

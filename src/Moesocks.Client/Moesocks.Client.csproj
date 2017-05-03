@@ -16,6 +16,7 @@
     <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -176,6 +177,7 @@
     <Reference Include="System.Diagnostics.DiagnosticSource, Version=4.0.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Diagnostics.DiagnosticSource.4.3.0\lib\net46\System.Diagnostics.DiagnosticSource.dll</HintPath>
     </Reference>
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Globalization.Calendars, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Globalization.Calendars.4.3.0\lib\net46\System.Globalization.Calendars.dll</HintPath>
     </Reference>
@@ -256,8 +258,11 @@
     <Compile Include="AppBootstrapper.cs" />
     <Compile Include="Areas\Pages\ViewModels\LoggingViewModel.cs" />
     <Compile Include="Areas\Pages\ViewModels\SettingsViewModel.cs" />
+    <Compile Include="Configuration\AppConfiguration.cs" />
     <Compile Include="IShell.cs" />
     <Compile Include="Logging\FlowDocumentLoggerProvider.cs" />
+    <Compile Include="ProductInformation.cs" />
+    <Compile Include="ServiceCollectionExtensions.cs" />
     <Compile Include="ViewModels\ShellViewModel.cs" />
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
