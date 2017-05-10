@@ -54,13 +54,10 @@ namespace Moesocks.Client.Services.Network
             _receivers.TryRemove(sessionKey, out var receiver);
         }
 
-        private readonly SemaphoreSlim _semSlim = new SemaphoreSlim(1);
-
         public Task SendAsync(uint sessionKey, uint identifier, object message)
         {
             return _writeQueue.Queue(async() =>
             {
-                await _semSlim.WaitAsync();
                 try
                 {
                     _logger.LogDebug($"client: {sessionKey} Sending message {message} to server.");
@@ -70,10 +67,6 @@ namespace Moesocks.Client.Services.Network
                 {
                     _logger.LogError(default(EventId), ex.Message, ex);
                     throw;
-                }
-                finally
-                {
-                    _semSlim.Release();
                 }
             });
         }

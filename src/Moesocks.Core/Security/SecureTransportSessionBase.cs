@@ -95,11 +95,12 @@ namespace Moesocks.Security
             }
         }
 
-        public async Task ConnectAsync()
+        private async Task ConnectAsyncCore()
         {
-            if (State == SecureTransportSessionState.Connected ||
-                State == SecureTransportSessionState.Connecting)
+            if (State == SecureTransportSessionState.Connected)
                 return;
+            if (State == SecureTransportSessionState.Connecting)
+                throw new InvalidOperationException("Concurrent operation is not supported.");
             try
             {
                 State = SecureTransportSessionState.Disconnected;
@@ -115,6 +116,21 @@ namespace Moesocks.Security
             {
                 State = SecureTransportSessionState.Error;
                 throw;
+            }
+        }
+
+        private Task _connectTask;
+        private readonly object _connectTaskLocker = new object();
+
+        public Task ConnectAsync()
+        {
+            lock(_connectTaskLocker)
+            {
+                if (_connectTask == null || State == SecureTransportSessionState.Disconnected ||
+                    State == SecureTransportSessionState.Error)
+                    return _connectTask = ConnectAsyncCore();
+                else
+                    return _connectTask;
             }
         }
 

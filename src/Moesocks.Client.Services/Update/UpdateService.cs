@@ -67,9 +67,11 @@ namespace Moesocks.Client.Services.Update
         private static async void CheckUpdate(object me)
         {
             var service = (UpdateService)me;
+            var cts = service._cts;
+            if (cts is null) return;
             try
             {
-                var token = service._cts.Token;
+                var token = cts.Token;
                 token.ThrowIfCancellationRequested();
                 if (service.CanUpdate)
                 {

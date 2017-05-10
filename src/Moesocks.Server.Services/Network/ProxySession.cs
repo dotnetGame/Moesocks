@@ -61,35 +61,27 @@ namespace Moesocks.Server.Services.Network
         private async Task ProcessIncommingMessage(uint sessionKey, uint identifier, TcpContentMessage message)
         {
             var client = await GetTcpClient(message.Host, message.Port, sessionKey);
-            await client.GetStream().WriteAsync(message.Content, 0, message.Content.Length);
+            await client.Client.GetStream().WriteAsync(message.Content, 0, message.Content.Length);
         }
 
         private async Task ProcessIncommingMessage(uint sessionKey, uint identifier, TcpEndOfFileMessage message)
         {
             var client = await GetTcpClient(message.Host, message.Port, sessionKey);
-            client.Client.Shutdown(SocketShutdown.Send);
+            client.Client.Client.Shutdown(SocketShutdown.Send);
+            ReleaseTcpClient(sessionKey, message.Host, message.Port, client);
         }
 
-        private readonly SemaphoreSlim _semSlim = new SemaphoreSlim(1);
         private async Task SendResponse(uint session, object message)
         {
             var id = _identifier++;
             await _responseDispatcher.Queue(async () =>
             {
-                await _semSlim.WaitAsync();
-                try
-                {
-                    await _messageSerializer.Serialize(session, id, message, _transport);
-                    _logger.LogDebug($"Sent message {message} to client: {session}.");
-                }
-                finally
-                {
-                    _semSlim.Release();
-                }
+                await _messageSerializer.Serialize(session, id, message, _transport);
+                _logger.LogDebug($"Sent message {message} to client: {session}.");
             });
         }
 
-        private async Task<TcpClient> GetTcpClient(string host, int port, uint desiredSession)
+        private async Task<TcpClientEntry> GetTcpClient(string host, int port, uint desiredSession)
         {
             var key = new TcpClientKey { Host = host, Port = port, Session = desiredSession };
             var client = _tcpClients.GetOrAdd(key, k => new TcpClientEntry { Client = new TcpClient() });
@@ -105,26 +97,47 @@ namespace Moesocks.Server.Services.Network
                     client.Client = new TcpClient();
                     await client.Client.ConnectAsync(host, port);
                 }
-                ReceiveRemoteResponse(desiredSession, host, port, client.Client.GetStream());
+                client.CloseCount = 0;
+                ReceiveRemoteResponse(desiredSession, host, port, client);
             }
-            return client.Client;
+            return client;
+        }
+
+        private void RemoveTcpClient(string host, int port, uint session)
+        {
+            var key = new TcpClientKey { Host = host, Port = port, Session = session };
+            if (_tcpClients.TryRemove(key, out var client))
+            {
+                if (client.Client.Connected)
+                    client.Client.GetStream().Dispose();
+                client.Client.Dispose();
+            }
         }
 
         class TcpClientEntry
         {
             public TcpClient Client { get; set; }
+            public int CloseCount = 0;
         }
 
-        private async void ReceiveRemoteResponse(uint session, string host, int port, Stream stream)
+        private void ReleaseTcpClient(uint session, string host, int port, TcpClientEntry client)
+        {
+            if (Interlocked.Increment(ref client.CloseCount) == 2)
+                RemoveTcpClient(host, port, session);
+        }
+
+        private async void ReceiveRemoteResponse(uint session, string host, int port, TcpClientEntry client)
         {
             while (true)
             {
                 try
                 {
+                    var stream = client.Client.GetStream();
                     var buffer = new byte[4096];
                     var read = await stream.ReadAsync(buffer, 0, buffer.Length);
                     if (read == 0)
                     {
+                        ReleaseTcpClient(session, host, port, client);
                         await SendResponse(session, new TcpEndOfFileMessage
                         {
                             Host = host,
@@ -146,6 +159,7 @@ namespace Moesocks.Server.Services.Network
                 }
                 catch (Exception)
                 {
+                    RemoveTcpClient(host, port, session);
                     break;
                 }
             }
