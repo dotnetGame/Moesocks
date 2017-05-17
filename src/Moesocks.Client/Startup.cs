@@ -40,6 +40,7 @@ namespace Moesocks.Client
             services.AddTransient<SystemTrayIconViewModel>();
             services.AddTransient<Areas.Pages.ViewModels.LoggingViewModel>();
             services.AddTransient<Areas.Pages.ViewModels.SettingsViewModel>();
+            services.AddTransient<Areas.Pages.ViewModels.PerformanceViewModel>();
             services.AddSingleton<FlowDocumentLoggerProvider>();
 
             services.AddConnectionRouter(Configuration.GetSection("connectionRouter"));

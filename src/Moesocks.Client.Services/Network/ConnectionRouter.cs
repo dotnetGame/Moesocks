@@ -11,6 +11,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 using Tomato.Threading;
 
 namespace Moesocks.Client.Services.Network
@@ -25,7 +26,7 @@ namespace Moesocks.Client.Services.Network
         private CancellationTokenSource _cts;
         private readonly ConnectionRouterSettings _settings;
         private readonly MessageSerializer _serializer = new MessageSerializer();
-        private readonly OperationQueue _writeQueue = new OperationQueue(1);
+        private readonly ActionBlock<(uint sessionKey, uint identifier, object message)> _requestDispather;
 
         public ConnectionRouter(IOptions<ConnectionRouterSettings> settings, IOptions<SecuritySettings> securitySettings, ILoggerFactory loggerFactory)
         {
@@ -40,6 +41,7 @@ namespace Moesocks.Client.Services.Network
                 ServerEndPoint = new DnsEndPoint(settings.Value.ServerAddress, settings.Value.ServerPort)
             }, _loggerFactory);
             _httpProxySession = new HttpProxyProvider(settings.Value.Http, this, _loggerFactory);
+            _requestDispather = new ActionBlock<(uint sessionKey, uint identifier, object message)>(DispatchRequest);
         }
 
         private readonly ConcurrentDictionary<uint, Action<uint, object>> _receivers = new ConcurrentDictionary<uint, Action<uint, object>>();
@@ -54,21 +56,24 @@ namespace Moesocks.Client.Services.Network
             _receivers.TryRemove(sessionKey, out var receiver);
         }
 
-        public Task SendAsync(uint sessionKey, uint identifier, object message)
+        public async Task SendAsync(uint sessionKey, uint identifier, object message)
         {
-            return _writeQueue.Queue(async() =>
+            if (!_requestDispather.Completion.IsCompleted)
+                await _requestDispather.SendAsync((sessionKey, identifier, message));
+        }
+
+        private async Task DispatchRequest((uint sessionKey, uint identifier, object message) request)
+        {
+            try
             {
-                try
-                {
-                    _logger.LogDebug($"client: {sessionKey} Sending message {message} to server.");
-                    await _serializer.Serialize(sessionKey, identifier, message, _secureTransport);
-                }
-                catch(Exception ex)
-                {
-                    _logger.LogError(default(EventId), ex.Message, ex);
-                    throw;
-                }
-            });
+                _logger.LogDebug($"client: {request.sessionKey} Sending message {request.message} to server.");
+                await _serializer.Serialize(request.sessionKey, request.identifier, request.message, _secureTransport);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(default(EventId), ex.Message, ex);
+                throw;
+            }
         }
 
         public async void Startup()
@@ -102,7 +107,7 @@ namespace Moesocks.Client.Services.Network
                     if (_receivers.TryGetValue(sessionKey, out var receiver))
                         receiver(identifier, message);
                 }
-                catch(OperationCanceledException)
+                catch(OperationCanceledException ex) when (ex.CancellationToken == cancellationToken)
                 {
                     _receivers.Clear();
                     _logger.LogWarning($"Proxy stopped.");
@@ -111,6 +116,7 @@ namespace Moesocks.Client.Services.Network
                 catch (Exception ex)
                 {
                     _logger.LogError(default(EventId), ex.Message, ex);
+                    await Task.Delay(5000);
                 }
             }
         }

@@ -13,6 +13,7 @@ namespace Moesocks.Client.ViewModels
             Pages = new object[]
             {
                 IoC.Get<LoggingViewModel>(),
+                IoC.Get<PerformanceViewModel>(),
                 IoC.Get<SettingsViewModel>()
             };
         }

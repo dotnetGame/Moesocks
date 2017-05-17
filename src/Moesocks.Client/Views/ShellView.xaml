@@ -8,7 +8,7 @@
                    GlowBrush="{DynamicResource AccentColorBrush}"
                    SaveWindowPosition="True"
                    EnableDWMDropShadow="True" ShowIconOnTitleBar="True"
-                   Height="338" Width="601" Title="Moesocks">
+                   Height="399" Width="676" Title="Moesocks">
     <metro:MetroWindow.IconTemplate>
         <DataTemplate>
             <Grid Width="{TemplateBinding Width}"

@@ -15,7 +15,8 @@ namespace Moesocks.Client
         public static IServiceCollection AddConnectionRouter(this IServiceCollection services, IConfiguration configuration)
         {
             return services.Configure<ConnectionRouterSettings>(configuration)
-                .AddSingleton<IConnectionRouter, ConnectionRouter>();
+                .AddSingleton<IConnectionRouter, ConnectionRouter>()
+                .AddSingleton<IPerformanceDiagnose>(PerformanceDiagnose.Current);
         }
 
         public static IServiceCollection AddSecurity(this IServiceCollection services, IConfiguration configuration)

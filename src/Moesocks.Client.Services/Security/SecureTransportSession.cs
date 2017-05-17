@@ -13,6 +13,9 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using Tomato.Threading;
+using System.Threading;
+using Moesocks.Client.Services.Network;
+using System.Diagnostics;
 
 namespace Moesocks.Client.Services.Security
 {
@@ -53,6 +56,25 @@ namespace Moesocks.Client.Services.Security
         private bool OnRemoteCertificateValidation(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
             return chain.Build((X509Certificate2)certificate);
+        }
+
+        private readonly Stopwatch _readSw = new Stopwatch(), _writeSw = new Stopwatch();
+
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken token)
+        {
+            _readSw.Restart();
+            var read = await base.ReadAsync(buffer, offset, count, token);
+            _readSw.Stop();
+            PerformanceDiagnose.Current.NotifyReceive((uint)(read * 100 / Math.Max(1, _readSw.Elapsed.TotalSeconds)));
+            return read;
+        }
+
+        public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken token)
+        {
+            _writeSw.Restart();
+            await base.WriteAsync(buffer, offset, count, token);
+            _writeSw.Stop();
+            PerformanceDiagnose.Current.NotifySend((uint)(count * 100 / Math.Max(1, _writeSw.Elapsed.TotalSeconds)));
         }
     }
 }

@@ -12,6 +12,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 using Tomato.Threading;
 
 namespace Moesocks.Server.Services.Network
@@ -22,7 +23,7 @@ namespace Moesocks.Server.Services.Network
         private readonly ILogger _logger;
         private readonly MessageSerializer _messageSerializer;
         private readonly ConcurrentDictionary<TcpClientKey, TcpClientEntry> _tcpClients = new ConcurrentDictionary<TcpClientKey, TcpClientEntry>();
-        private readonly OperationQueue _responseDispatcher = new OperationQueue(1);
+        private readonly ActionBlock<(uint session, object message)> _responseDispatcher;
         private uint _identifier;
 
         public ProxySession(SecureTransportSession transport, ILoggerFactory loggerFactory)
@@ -30,18 +31,27 @@ namespace Moesocks.Server.Services.Network
             _transport = transport;
             _logger = loggerFactory.CreateLogger<ProxySession>();
             _messageSerializer = new MessageSerializer();
+            _responseDispatcher = new ActionBlock<(uint session, object message)>(DispatchResponse);
         }
 
         public Task Run(CancellationToken token)
         {
             return Task.Run(async () =>
             {
-                token.ThrowIfCancellationRequested();
-                while (true)
+                try
                 {
-                    var message = await _messageSerializer.Deserialize(_transport);
-                    _logger.LogDebug($"Received message {message.message} from client: {message.sessionKey}.");
-                    DispatchIncomming(message.sessionKey, message.identifier, message.message);
+                    token.ThrowIfCancellationRequested();
+                    while (!_responseDispatcher.Completion.IsCompleted)
+                    {
+                        var message = await _messageSerializer.Deserialize(_transport);
+                        _logger.LogDebug($"Received message {message.message} from client: {message.sessionKey}.");
+                        DispatchIncomming(message.sessionKey, message.identifier, message.message);
+                    }
+                }
+                catch
+                {
+                    _responseDispatcher.Complete();
+                    throw;
                 }
             });
         }
@@ -73,12 +83,23 @@ namespace Moesocks.Server.Services.Network
 
         private async Task SendResponse(uint session, object message)
         {
-            var id = _identifier++;
-            await _responseDispatcher.Queue(async () =>
+            if (!_responseDispatcher.Completion.IsCompleted)
+                await _responseDispatcher.SendAsync((session, message));
+        }
+
+        private async Task DispatchResponse((uint session, object message) response)
+        {
+            try
             {
-                await _messageSerializer.Serialize(session, id, message, _transport);
-                _logger.LogDebug($"Sent message {message} to client: {session}.");
-            });
+                var id = _identifier++;
+                await _messageSerializer.Serialize(response.session, id, response.message, _transport);
+                _logger.LogDebug($"Sent message {response.message} to client: {response.session}.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(new EventId(), ex.Message, ex);
+                throw;
+            }
         }
 
         private async Task<TcpClientEntry> GetTcpClient(string host, int port, uint desiredSession)
