@@ -23,7 +23,17 @@ namespace Moesocks.Client.Views
     {
         public SystemTrayIconView()
         {
+            TrayToolTipOpen += SystemTrayIconView_TrayToolTipOpen;
             InitializeComponent();
+        }
+
+        private void SystemTrayIconView_TrayToolTipOpen(object sender, RoutedEventArgs e)
+        {
+            var toolTip = TrayToolTipResolved as ToolTip;
+            if (toolTip != null)
+            {
+                toolTip.Style = null;
+            }
         }
     }
 }

@@ -15,5 +15,4 @@
   <ItemGroup>
     <ProjectReference Include="..\Moesocks.Core\Moesocks.Core.csproj" />
   </ItemGroup>
-
 </Project>

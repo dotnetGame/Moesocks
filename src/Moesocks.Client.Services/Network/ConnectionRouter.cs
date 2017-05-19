@@ -12,7 +12,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using Tomato.Threading;
 
 namespace Moesocks.Client.Services.Network
 {
@@ -27,13 +26,15 @@ namespace Moesocks.Client.Services.Network
         private readonly ConnectionRouterSettings _settings;
         private readonly MessageSerializer _serializer = new MessageSerializer();
         private readonly ActionBlock<(uint sessionKey, uint identifier, object message)> _requestDispather;
+        private readonly IPlatformProvider _platformProvider;
 
-        public ConnectionRouter(IOptions<ConnectionRouterSettings> settings, IOptions<SecuritySettings> securitySettings, ILoggerFactory loggerFactory)
+        public ConnectionRouter(IOptions<ConnectionRouterSettings> settings, IOptions<SecuritySettings> securitySettings, IPlatformProvider platformProvider, ILoggerFactory loggerFactory)
         {
             _settings = settings.Value;
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<ConnectionRouter>();
             _secSettings = securitySettings.Value;
+            _platformProvider = platformProvider;
             _secureTransport = new SecureTransportSession(new SecureTransportSessionSettings
             {
                 Certificate = new X509Certificate2(securitySettings.Value.ServerCertificateFileName, securitySettings.Value.ServerCertificatePassword),
@@ -83,13 +84,13 @@ namespace Moesocks.Client.Services.Network
             try
             {
                 //http={_settings.Http.LocalIPAddress}:{_settings.Http.LocalPort},
-                IEProxyHelper.SetProxy($@"https={_settings.Http.LocalIPAddress}:{_settings.Http.LocalPort}");
                 var tasks = new[] { _httpProxySession.Startup(token), BeginReceiveMessages(token) };
+                _platformProvider.SetProxy($@"https={_settings.Http.LocalIPAddress}:{_settings.Http.LocalPort}");
                 await Task.WhenAll(tasks);
             }
             finally
             {
-                IEProxyHelper.UnsetProxy();
+                _platformProvider.UnsetProxy();
             }
         }
 
@@ -125,7 +126,7 @@ namespace Moesocks.Client.Services.Network
         {
             if (_cts != null)
                 _cts.Cancel();
-            IEProxyHelper.UnsetProxy();
+            _platformProvider.UnsetProxy();
         }
     }
 }

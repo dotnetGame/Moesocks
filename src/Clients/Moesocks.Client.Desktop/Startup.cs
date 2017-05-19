@@ -43,6 +43,7 @@ namespace Moesocks.Client
             services.AddTransient<Areas.Pages.ViewModels.PerformanceViewModel>();
             services.AddSingleton<FlowDocumentLoggerProvider>();
 
+            services.AddSingleton<Services.IPlatformProvider, PlatformProvider>();
             services.AddConnectionRouter(Configuration.GetSection("connectionRouter"));
             services.AddSecurity(Configuration.GetSection("security"));
             services.AddUpdate();

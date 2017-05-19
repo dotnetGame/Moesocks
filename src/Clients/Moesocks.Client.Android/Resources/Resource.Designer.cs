@@ -60,11 +60,14 @@ namespace Moesocks.Client
 		public partial class Id
 		{
 			
+			// aapt resource value: 0x7f060002
+			public const int action_start = 2131099650;
+			
 			// aapt resource value: 0x7f060001
-			public const int action_log = 2131099649;
+			public const int fragmentContainer = 2131099649;
 			
 			// aapt resource value: 0x7f060000
-			public const int fragmentContainer = 2131099648;
+			public const int loggingText = 2131099648;
 			
 			static Id()
 			{
@@ -80,7 +83,10 @@ namespace Moesocks.Client
 		{
 			
 			// aapt resource value: 0x7f030000
-			public const int Main = 2130903040;
+			public const int loggingFragment = 2130903040;
+			
+			// aapt resource value: 0x7f030001
+			public const int Main = 2130903041;
 			
 			static Layout()
 			{

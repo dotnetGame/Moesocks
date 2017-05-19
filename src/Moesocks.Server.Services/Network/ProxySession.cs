@@ -13,7 +13,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using Tomato.Threading;
 
 namespace Moesocks.Server.Services.Network
 {
@@ -32,6 +31,7 @@ namespace Moesocks.Server.Services.Network
             _logger = loggerFactory.CreateLogger<ProxySession>();
             _messageSerializer = new MessageSerializer();
             _responseDispatcher = new ActionBlock<(uint session, object message)>(DispatchResponse);
+            _responseDispatcher.Completion.ContinueWith(OnDispatcherCompleted);
         }
 
         public Task Run(CancellationToken token)
@@ -54,6 +54,11 @@ namespace Moesocks.Server.Services.Network
                     throw;
                 }
             });
+        }
+
+        private void OnDispatcherCompleted(Task arg1)
+        {
+            _transport.Dispose();
         }
 
         private async void DispatchIncomming(uint sessionKey, uint identifier, object message)

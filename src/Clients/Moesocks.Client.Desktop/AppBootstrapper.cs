@@ -11,6 +11,7 @@ using System.Threading;
 using Moesocks.Client.Services;
 using Hardcodet.Wpf.TaskbarNotification;
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 
 namespace Moesocks.Client
 {
@@ -39,16 +40,40 @@ namespace Moesocks.Client
         private void Application_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
         {
             e.Handled = true;
+            ReportError(e.Exception);
         }
 
         private void TaskScheduler_UnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
         {
             e.SetObserved();
+            ReportError(e.Exception.Flatten());
         }
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            
+            if (e.ExceptionObject is Exception ex)
+                ReportError(ex);
+        }
+
+        private ILogger _logger;
+        private bool _isMessageDisplaying;
+
+        private void ReportError(Exception exception)
+        {
+            if(_logger == null)
+            {
+                var loggerFactory = ServiceProvider?.GetService<ILoggerFactory>();
+                if (loggerFactory != null)
+                    _logger = loggerFactory.CreateLogger<AppBootstrapper>();
+            }
+            if (_logger != null)
+                _logger.LogError(default(EventId), exception.Message, exception);
+            else if(!_isMessageDisplaying)
+            {
+                _isMessageDisplaying = true;
+                MessageBox.Show(exception.Message.ToString(), "Moesocks", MessageBoxButton.OK, MessageBoxImage.Error);
+                _isMessageDisplaying = false;
+            }
         }
 
         protected override void Configure()
@@ -89,7 +114,6 @@ namespace Moesocks.Client
             EnableTrayIcon();
             StartConnectionRouter();
             StartUpdateService();
-            //DisplayRootViewFor<IShell>();
         }
 
         private IUpdateService _updateService;

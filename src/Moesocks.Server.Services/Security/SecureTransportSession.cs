@@ -14,7 +14,6 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Tomato.Threading;
 
 namespace Moesocks.Server.Services.Security
 {
@@ -55,6 +54,13 @@ namespace Moesocks.Server.Services.Security
         {
             return chain.Build((X509Certificate2)certificate) &&
                 chain.ChainElements.Cast<X509ChainElement>().Any(o => o.Certificate.Equals(_settings.Certificate));
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            if (disposing)
+                _tcpClient.Dispose();
         }
     }
 }
