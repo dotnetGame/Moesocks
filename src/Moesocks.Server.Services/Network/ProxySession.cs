@@ -69,7 +69,7 @@ namespace Moesocks.Server.Services.Network
             }
             catch
             {
-
+                _responseDispatcher.Complete();
             }
         }
 
