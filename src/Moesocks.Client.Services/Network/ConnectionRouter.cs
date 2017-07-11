@@ -21,7 +21,10 @@ namespace Moesocks.Client.Services.Network
         private readonly ILogger _logger;
         private readonly SecuritySettings _secSettings;
         private readonly SecureTransportSession _secureTransport;
+
         private readonly HttpProxyProvider _httpProxySession;
+        private readonly Socks5ProxyProvider _socks5ProxySession;
+
         private CancellationTokenSource _cts;
         private readonly ConnectionRouterSettings _settings;
         private readonly MessageSerializer _serializer = new MessageSerializer();
@@ -42,6 +45,7 @@ namespace Moesocks.Client.Services.Network
                 ServerEndPoint = new DnsEndPoint(settings.Value.ServerAddress, settings.Value.ServerPort)
             }, _loggerFactory);
             _httpProxySession = new HttpProxyProvider(settings.Value.Http, this, _loggerFactory);
+            _socks5ProxySession = new Socks5ProxyProvider(this, _loggerFactory);
             _requestDispather = new ActionBlock<(uint sessionKey, uint identifier, object message)>(DispatchRequest);
         }
 
@@ -84,7 +88,12 @@ namespace Moesocks.Client.Services.Network
             try
             {
                 //http={_settings.Http.LocalIPAddress}:{_settings.Http.LocalPort},
-                var tasks = new[] { _httpProxySession.Startup(token), BeginReceiveMessages(token) };
+                var tasks = new[]
+                {
+                    _httpProxySession.Startup(token),
+                    _socks5ProxySession.Startup(token),
+                    BeginReceiveMessages(token)
+                };
                 _platformProvider.SetProxy($@"https={_settings.Http.LocalIPAddress}:{_settings.Http.LocalPort}");
                 await Task.WhenAll(tasks);
             }
@@ -108,7 +117,7 @@ namespace Moesocks.Client.Services.Network
                     if (_receivers.TryGetValue(sessionKey, out var receiver))
                         receiver(identifier, message);
                 }
-                catch(OperationCanceledException ex) when (ex.CancellationToken == cancellationToken)
+                catch (OperationCanceledException ex) when (ex.CancellationToken == cancellationToken)
                 {
                     _receivers.Clear();
                     _logger.LogWarning($"Proxy stopped.");

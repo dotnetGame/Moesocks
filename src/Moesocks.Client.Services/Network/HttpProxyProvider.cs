@@ -67,16 +67,18 @@ namespace Moesocks.Client.Services.Network
                     var httpParser = new HttpParser(stream, buffer);
                     var takenStream = new MemoryStream();
                     await httpParser.Parse(takenStream);
+
+                    (var host, var port) = ParseHostAndPort(httpParser.Host);
                     if (httpParser.Method == "CONNECT")
                     {
                         _logger.LogInformation($"Tunnel to: {httpParser.Host}");
-                        var session = new TunnelProxySession(httpParser.Host, stream, takenStream.ToArray(), _messageBus, _loggerFactory);
+                        var session = new TunnelProxySession(host, port, stream, takenStream.ToArray(), _messageBus, _loggerFactory);
                         await session.Run();
                     }
                     else
                     {
                         _logger.LogInformation($"Http request to: {httpParser.Host}");
-                        var session = new HttpProxySession(httpParser.Host, stream, takenStream.ToArray(), _messageBus, _loggerFactory);
+                        var session = new HttpProxySession(host, port, stream, takenStream.ToArray(), _messageBus, _loggerFactory);
                         await session.Run();
                     }
                 }
@@ -89,6 +91,15 @@ namespace Moesocks.Client.Services.Network
             {
                 _logger.LogError(Interlocked.Increment(ref _eventId), ex, ex.Message);
             }
+        }
+
+        private (string host, ushort port) ParseHostAndPort(string targetHost)
+        {
+            var idx = targetHost.IndexOf(':');
+            if (idx != -1)
+                return (targetHost.Substring(0, idx).Trim(), ushort.Parse(targetHost.Substring(idx + 1)));
+            else
+                return (targetHost.Trim(), 443);
         }
 
         class HttpParser

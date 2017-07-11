@@ -14,5 +14,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Moesocks.Core\Moesocks.Core.csproj" />
+    <ProjectReference Include="..\Moesocks.Socks5\Moesocks.Socks5.csproj" />
   </ItemGroup>
 </Project>

@@ -1,17 +1,17 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26510.0
+VisualStudioVersion = 15.0.26430.14
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moesocks.Core", "Moesocks.Core\Moesocks.Core.csproj", "{E06CCFCB-6284-4933-ADC0-A2961F8A4C50}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Moesocks.Core", "Moesocks.Core\Moesocks.Core.csproj", "{E06CCFCB-6284-4933-ADC0-A2961F8A4C50}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moesocks.Server", "Moesocks.Server\Moesocks.Server.csproj", "{5F8254DE-236B-47D2-A39C-10F6EB8AA931}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Moesocks.Server", "Moesocks.Server\Moesocks.Server.csproj", "{5F8254DE-236B-47D2-A39C-10F6EB8AA931}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moesocks.Server.Services", "Moesocks.Server.Services\Moesocks.Server.Services.csproj", "{06DD75F5-325D-4071-BC15-C43C3A8DA9A5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Moesocks.Server.Services", "Moesocks.Server.Services\Moesocks.Server.Services.csproj", "{06DD75F5-325D-4071-BC15-C43C3A8DA9A5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moesocks.Client.Services", "Moesocks.Client.Services\Moesocks.Client.Services.csproj", "{3AABA3AF-1BB0-472F-9865-B3BD2EAE9A08}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Moesocks.Client.Services", "Moesocks.Client.Services\Moesocks.Client.Services.csproj", "{3AABA3AF-1BB0-472F-9865-B3BD2EAE9A08}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moesocks.ClientMaker", "Tools\Moesocks.ClientMaker\Moesocks.ClientMaker.csproj", "{621D5A2D-CE70-4045-A245-54223B9CBF8B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Moesocks.ClientMaker", "Tools\Moesocks.ClientMaker\Moesocks.ClientMaker.csproj", "{621D5A2D-CE70-4045-A245-54223B9CBF8B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{2E76EAEE-303D-4461-8C35-8D74D306C697}"
 EndProject
@@ -20,6 +20,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moesocks.Client.Desktop", "Clients\Moesocks.Client.Desktop\Moesocks.Client.Desktop.csproj", "{F638BD77-FEDC-43A2-80A7-7DCD50AE2BA0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moesocks.Client.Android", "Clients\Moesocks.Client.Android\Moesocks.Client.Android.csproj", "{A1E63CCA-BE63-4811-B5EE-51713632D052}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moesocks.Socks5", "Moesocks.Socks5\Moesocks.Socks5.csproj", "{5436BDFF-BD0C-4891-A892-082DBAAFD877}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -185,6 +187,26 @@ Global
 		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Release|x86.ActiveCfg = Release|Any CPU
 		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Release|x86.Build.0 = Release|Any CPU
 		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Release|x86.Deploy.0 = Release|Any CPU
+		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Debug|iPhone.ActiveCfg = Debug|Any CPU
+		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Debug|iPhone.Build.0 = Debug|Any CPU
+		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
+		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
+		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Debug|x64.Build.0 = Debug|Any CPU
+		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Debug|x86.Build.0 = Debug|Any CPU
+		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Release|iPhone.ActiveCfg = Release|Any CPU
+		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Release|iPhone.Build.0 = Release|Any CPU
+		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
+		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
+		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Release|x64.ActiveCfg = Release|Any CPU
+		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Release|x64.Build.0 = Release|Any CPU
+		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Release|x86.ActiveCfg = Release|Any CPU
+		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

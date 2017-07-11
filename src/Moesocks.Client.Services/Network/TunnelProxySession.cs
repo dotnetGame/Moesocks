@@ -21,9 +21,10 @@ namespace Moesocks.Client.Services.Network
         private readonly uint _sessionKey;
         private byte[] _takenBytes;
 
-        public TunnelProxySession(string targetHost, Stream remoteStream, byte[] takenBytes, IMessageBus messageBus, ILoggerFactory loggerFactory)
+        public TunnelProxySession(string targetHost, ushort targetPort, Stream remoteStream, byte[] takenBytes, IMessageBus messageBus, ILoggerFactory loggerFactory)
         {
-            (_targetHost, _targetPort) = ParseHostAndPort(targetHost);
+            _targetHost = targetHost;
+            _targetPort = targetPort;
             _remoteStream = remoteStream;
             _messageBus = messageBus;
             _loggerFactory = loggerFactory;
@@ -31,20 +32,12 @@ namespace Moesocks.Client.Services.Network
             _takenBytes = takenBytes;
         }
 
-        private (string host, ushort port) ParseHostAndPort(string targetHost)
-        {
-            var idx = targetHost.IndexOf(':');
-            if (idx != -1)
-                return (targetHost.Substring(0, idx).Trim(), ushort.Parse(targetHost.Substring(idx + 1)));
-            else
-                return (targetHost.Trim(), 443);
-        }
-
-        public async Task Run()
+        public async Task Run(bool isHttpTunnel = true)
         {
             try
             {
-                await SendOkResponse();
+                if (isHttpTunnel)
+                    await SendOkResponse();
                 var tasks = new[] { RunMessageReceive(), RunClientRead() };
                 await Task.WhenAll(tasks);
             }
