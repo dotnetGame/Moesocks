@@ -85,7 +85,7 @@ namespace Moesocks.Socks5.Protocol.Messages
         public static ushort FromBigEndian(this ushort value)
         {
             if (BitConverter.IsLittleEndian)
-                return (ushort)((ushort)(value >> 8) | (byte)(value));
+                return (ushort)((byte)(value >> 8) | ((byte)(value) << 8));
             return value;
         }
     }
