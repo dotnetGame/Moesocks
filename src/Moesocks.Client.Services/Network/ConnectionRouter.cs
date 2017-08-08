@@ -76,7 +76,9 @@ namespace Moesocks.Client.Services.Network
             }
             catch (Exception ex)
             {
-                _logger.LogError(default(EventId), ex.Message, ex);
+                _logger.LogError(0, ex.Message, ex);
+                _requestDispather.Complete();
+                _secureTransport.Reset();
                 throw;
             }
         }

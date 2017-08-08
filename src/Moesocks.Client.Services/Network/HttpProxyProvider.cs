@@ -72,7 +72,7 @@ namespace Moesocks.Client.Services.Network
                     if (httpParser.Method == "CONNECT")
                     {
                         _logger.LogInformation($"Tunnel to: {httpParser.Host}");
-                        var session = new TunnelProxySession(host, port, stream, takenStream.ToArray(), _messageBus, _loggerFactory);
+                        var session = new TunnelProxySession(host, port, tcpClient.Client, stream, takenStream.ToArray(), _messageBus, _loggerFactory);
                         await session.Run();
                     }
                     else

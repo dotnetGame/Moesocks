@@ -102,7 +102,9 @@ namespace Moesocks.Server.Services.Network
             }
             catch (Exception ex)
             {
-                _logger.LogError(new EventId(), ex.Message, ex);
+                _logger.LogError(0, ex.Message, ex);
+                _responseDispatcher.Complete();
+                _transport.Dispose();
                 throw;
             }
         }
@@ -152,40 +154,53 @@ namespace Moesocks.Server.Services.Network
                 RemoveTcpClient(host, port, session);
         }
 
+        private byte[] _readBuffer = new byte[1024 * 16];
+
         private async void ReceiveRemoteResponse(uint session, string host, int port, TcpClientEntry client)
         {
             while (true)
             {
+                bool noNext = false;
+                object message;
                 try
                 {
                     var stream = client.Client.GetStream();
-                    var buffer = new byte[4096];
-                    var read = await stream.ReadAsync(buffer, 0, buffer.Length);
+                    var read = await stream.ReadAsync(_readBuffer, 0, _readBuffer.Length);
                     if (read == 0)
                     {
-                        ReleaseTcpClient(session, host, port, client);
-                        await SendResponse(session, new TcpEndOfFileMessage
+                        message = new TcpEndOfFileMessage
                         {
                             Host = host,
                             Port = (ushort)port
-                        });
-                        break;
+                        };
+                        noNext = true;
                     }
                     else
                     {
                         var dst = new byte[read];
-                        Array.Copy(buffer, dst, read);
-                        await SendResponse(session, new TcpContentMessage
+                        Array.Copy(_readBuffer, dst, read);
+                        message = new TcpContentMessage
                         {
                             Host = host,
                             Port = (ushort)port,
                             Content = dst
-                        });
+                        };
                     }
                 }
                 catch (Exception)
                 {
+                    message = new TcpEndOfFileMessage
+                    {
+                        Host = host,
+                        Port = (ushort)port
+                    };
                     RemoveTcpClient(host, port, session);
+                    noNext = true;
+                }
+                await SendResponse(session, message);
+                if (noNext)
+                {
+                    ReleaseTcpClient(session, host, port, client);
                     break;
                 }
             }

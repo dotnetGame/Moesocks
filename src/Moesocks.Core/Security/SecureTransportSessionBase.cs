@@ -121,6 +121,11 @@ namespace Moesocks.Security
         private Task _connectTask;
         private readonly object _connectTaskLocker = new object();
 
+        public void Reset()
+        {
+            State = SecureTransportSessionState.Disconnected;
+        }
+
         public Task ConnectAsync()
         {
             lock(_connectTaskLocker)

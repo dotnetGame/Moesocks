@@ -19,9 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Clients", "Clients", "{79D9
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moesocks.Client.Desktop", "Clients\Moesocks.Client.Desktop\Moesocks.Client.Desktop.csproj", "{F638BD77-FEDC-43A2-80A7-7DCD50AE2BA0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moesocks.Client.Android", "Clients\Moesocks.Client.Android\Moesocks.Client.Android.csproj", "{A1E63CCA-BE63-4811-B5EE-51713632D052}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moesocks.Socks5", "Moesocks.Socks5\Moesocks.Socks5.csproj", "{5436BDFF-BD0C-4891-A892-082DBAAFD877}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Moesocks.Socks5", "Moesocks.Socks5\Moesocks.Socks5.csproj", "{5436BDFF-BD0C-4891-A892-082DBAAFD877}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -157,36 +155,6 @@ Global
 		{F638BD77-FEDC-43A2-80A7-7DCD50AE2BA0}.Release|x64.Build.0 = Release|Any CPU
 		{F638BD77-FEDC-43A2-80A7-7DCD50AE2BA0}.Release|x86.ActiveCfg = Release|x86
 		{F638BD77-FEDC-43A2-80A7-7DCD50AE2BA0}.Release|x86.Build.0 = Release|x86
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Debug|iPhone.ActiveCfg = Debug|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Debug|iPhone.Build.0 = Debug|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Debug|iPhone.Deploy.0 = Debug|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Debug|iPhoneSimulator.Deploy.0 = Debug|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Debug|x64.Build.0 = Debug|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Debug|x64.Deploy.0 = Debug|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Debug|x86.Build.0 = Debug|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Debug|x86.Deploy.0 = Debug|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Release|Any CPU.Deploy.0 = Release|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Release|iPhone.ActiveCfg = Release|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Release|iPhone.Build.0 = Release|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Release|iPhone.Deploy.0 = Release|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Release|iPhoneSimulator.Deploy.0 = Release|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Release|x64.ActiveCfg = Release|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Release|x64.Build.0 = Release|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Release|x64.Deploy.0 = Release|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Release|x86.ActiveCfg = Release|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Release|x86.Build.0 = Release|Any CPU
-		{A1E63CCA-BE63-4811-B5EE-51713632D052}.Release|x86.Deploy.0 = Release|Any CPU
 		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5436BDFF-BD0C-4891-A892-082DBAAFD877}.Debug|iPhone.ActiveCfg = Debug|Any CPU
@@ -214,6 +182,5 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{621D5A2D-CE70-4045-A245-54223B9CBF8B} = {2E76EAEE-303D-4461-8C35-8D74D306C697}
 		{F638BD77-FEDC-43A2-80A7-7DCD50AE2BA0} = {79D9DBCC-4C9D-4020-80B5-6275AB207771}
-		{A1E63CCA-BE63-4811-B5EE-51713632D052} = {79D9DBCC-4C9D-4020-80B5-6275AB207771}
 	EndGlobalSection
 EndGlobal

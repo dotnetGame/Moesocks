@@ -7,6 +7,7 @@ using System.IO;
 using System.Net;
 using Moesocks.Socks5.Protocol.Messages;
 using System.Threading.Tasks;
+using System.Net.Sockets;
 
 namespace Moesocks.Client.Services.Network
 {
@@ -20,27 +21,29 @@ namespace Moesocks.Client.Services.Network
             _messageBus = messageBus;
         }
 
-        protected override Socks5ProxySessionBase CreateSession(Stream remoteStream)
+        protected override Socks5ProxySessionBase CreateSession(Stream remoteStream, Socket socket)
         {
-            return new Socks5ProxySession(remoteStream, _messageBus, _loggerFactory);
+            return new Socks5ProxySession(remoteStream, socket, _messageBus, _loggerFactory);
         }
 
         class Socks5ProxySession : Socks5ProxySessionBase
         {
+            private readonly Socket _socket;
             private readonly IMessageBus _messageBus;
             private readonly ILoggerFactory _loggerFactory;
             private TunnelProxySession _tunnelProxySession;
 
-            public Socks5ProxySession(Stream remoteStream, IMessageBus messageBus, ILoggerFactory loggerFactory) 
+            public Socks5ProxySession(Stream remoteStream, Socket socket, IMessageBus messageBus, ILoggerFactory loggerFactory) 
                 : base(remoteStream)
             {
+                _socket = socket;
                 _messageBus = messageBus;
                 _loggerFactory = loggerFactory;
             }
 
             protected override Task ConnectAsync(AddressType addressType, DnsEndPoint dest)
             {
-                _tunnelProxySession = new TunnelProxySession(dest.Host, (ushort)dest.Port, RemoteStream, Array.Empty<byte>(), _messageBus, _loggerFactory);
+                _tunnelProxySession = new TunnelProxySession(dest.Host, (ushort)dest.Port, _socket, RemoteStream, Array.Empty<byte>(), _messageBus, _loggerFactory);
                 return Task.CompletedTask;
             }
 

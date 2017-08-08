@@ -48,7 +48,7 @@ namespace Moesocks.Socks5
             try
             {
                 using (tcpClient)
-                using (var session = CreateSession(tcpClient.GetStream()))
+                using (var session = CreateSession(tcpClient.GetStream(), tcpClient.Client))
                 {
                     await session.Run(token);
                 }
@@ -59,6 +59,6 @@ namespace Moesocks.Socks5
             }
         }
 
-        protected abstract Socks5ProxySessionBase CreateSession(Stream remoteStream);
+        protected abstract Socks5ProxySessionBase CreateSession(Stream remoteStream, Socket socket);
     }
 }

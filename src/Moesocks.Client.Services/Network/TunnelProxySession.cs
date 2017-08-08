@@ -12,6 +12,7 @@ namespace Moesocks.Client.Services.Network
 {
     class TunnelProxySession
     {
+        private readonly Socket _socket;
         private readonly Stream _remoteStream;
         private readonly IMessageBus _messageBus;
         private readonly ILoggerFactory _loggerFactory;
@@ -21,10 +22,11 @@ namespace Moesocks.Client.Services.Network
         private readonly uint _sessionKey;
         private byte[] _takenBytes;
 
-        public TunnelProxySession(string targetHost, ushort targetPort, Stream remoteStream, byte[] takenBytes, IMessageBus messageBus, ILoggerFactory loggerFactory)
+        public TunnelProxySession(string targetHost, ushort targetPort, Socket socket, Stream remoteStream, byte[] takenBytes, IMessageBus messageBus, ILoggerFactory loggerFactory)
         {
             _targetHost = targetHost;
             _targetPort = targetPort;
+            _socket = socket;
             _remoteStream = remoteStream;
             _messageBus = messageBus;
             _loggerFactory = loggerFactory;
@@ -110,6 +112,7 @@ namespace Moesocks.Client.Services.Network
                     case TcpEndOfFileMessage _:
                         _messageBus.EndReceive(_sessionKey);
                         await _remoteStream.FlushAsync();
+                        _socket.Shutdown(SocketShutdown.Send);
                         _remoteStream.Dispose();
                         completionSource.SetResult(null);
                         break;
@@ -119,6 +122,8 @@ namespace Moesocks.Client.Services.Network
             });
             await completionSource.Task;
         }
+
+        private readonly byte[] _readBuffer = new byte[1024 * 16];
 
         private async Task RunClientRead()
         {
@@ -131,11 +136,10 @@ namespace Moesocks.Client.Services.Network
                     Content = _takenBytes
                 });
             }
-
-            var buffer = new byte[4096];
+            
             while (true)
             {
-                var read = await _remoteStream.ReadAsync(buffer, 0, buffer.Length);
+                var read = await _remoteStream.ReadAsync(_readBuffer, 0, _readBuffer.Length);
                 if (read == 0)
                 {
                     await _messageBus.SendAsync(_sessionKey, _identifier++, new TcpEndOfFileMessage
@@ -148,7 +152,7 @@ namespace Moesocks.Client.Services.Network
                 else
                 {
                     var dst = new byte[read];
-                    Array.Copy(buffer, dst, read);
+                    Array.Copy(_readBuffer, dst, read);
                     await _messageBus.SendAsync(_sessionKey, _identifier++, new TcpContentMessage
                     {
                         Host = _targetHost,
