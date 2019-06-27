@@ -54,7 +54,7 @@ namespace Moesocks.Client.Services.Security
 
         private bool OnRemoteCertificateValidation(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
-            return chain.Build((X509Certificate2)certificate);
+            return true;
         }
 
         private readonly Stopwatch _readSw = new Stopwatch(), _writeSw = new Stopwatch();

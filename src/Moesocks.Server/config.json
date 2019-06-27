@@ -12,8 +12,7 @@
     "serverPort": 8863
   },
   "security": {
-    "serverCertificateFileName": "E:\\Work\\Repository\\Moesocks\\cert\\ra_server.p12",
-    "serverCertificatePassword": "F*)SYh32f09SDfw3r",
+    "serverCertificateFileName": "D:\\Work\\Repository\\Moesocks\\cert\\ra_ca.crt",
     "maxRandomBytesLength": 256
   }
 }

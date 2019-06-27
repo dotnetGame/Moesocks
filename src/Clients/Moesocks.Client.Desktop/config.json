@@ -16,7 +16,7 @@
     }
   },
   "security": {
-    "serverCertificateFileName": "E:\\Work\\Repository\\Moesocks\\cert\\mcmaker\\clients\\sc_client\\sc_client.p12",
+    "serverCertificateFileName": "D:\\Work\\Repository\\Moesocks\\cert\\ra_client.p12",
     "serverCertificatePassword": "F*)SYh32f09SDfw3r",
     "maxRandomBytesLength": 256
   }

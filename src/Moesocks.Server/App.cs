@@ -29,7 +29,6 @@ namespace Moesocks.Server
         {
             _connectionRouter.Startup();
             _quitEvent.WaitOne();
-            Console.WriteLine("haha");
         }
     }
 }

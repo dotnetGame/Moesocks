@@ -29,7 +29,7 @@ namespace Moesocks.Server.Services.Network
             _logger = loggerFactory.CreateLogger<ConnectionRouter>();
             _listener = CreateListener(settings.Value);
             _secSettings = securitySettings.Value;
-            _serverCertificate = new X509Certificate2(securitySettings.Value.ServerCertificateFileName, securitySettings.Value.ServerCertificatePassword);
+            _serverCertificate = new X509Certificate2(securitySettings.Value.ServerCertificateFileName);
         }
 
         private TcpListener CreateListener(ConnectionRouterSettings settings)

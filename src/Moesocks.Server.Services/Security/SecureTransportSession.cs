@@ -20,6 +20,7 @@ namespace Moesocks.Server.Services.Security
     public class SecureTransportSessionSettings
     {
         public X509Certificate2 Certificate { get; set; }
+
         public ushort MaxRandomBytesLength { get; set; }
     }
 
@@ -52,8 +53,7 @@ namespace Moesocks.Server.Services.Security
 
         private bool OnRemoteCertificateValidation(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
-            return chain.Build((X509Certificate2)certificate) &&
-                chain.ChainElements.Cast<X509ChainElement>().Any(o => o.Certificate.Equals(_settings.Certificate));
+            return certificate.Issuer == _settings.Certificate.Subject;
         }
 
         protected override void Dispose(bool disposing)
