@@ -20,7 +20,8 @@ namespace Moesocks.Client.Services.Network
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger _logger;
         private readonly SecuritySettings _secSettings;
-        private readonly SecureTransportSession _secureTransport;
+        private readonly Func<SecureTransportSession> _secureTransportActivator;
+        private SecureTransportSession _secureTransport;
 
         private readonly HttpProxyProvider _httpProxySession;
         private readonly Socks5ProxyProvider _socks5ProxySession;
@@ -28,8 +29,9 @@ namespace Moesocks.Client.Services.Network
         private CancellationTokenSource _cts;
         private readonly ConnectionRouterSettings _settings;
         private readonly MessageSerializer _serializer = new MessageSerializer();
-        private readonly ActionBlock<(uint sessionKey, uint identifier, object message)> _requestDispather;
+        private readonly ActionBlock<(uint sessionKey, uint identifier, object message, Action onError)> _requestDispather;
         private readonly IPlatformProvider _platformProvider;
+        private readonly SemaphoreSlim _transportSemp = new SemaphoreSlim(1);
 
         public ConnectionRouter(IOptions<ConnectionRouterSettings> settings, IOptions<SecuritySettings> securitySettings, IPlatformProvider platformProvider, ILoggerFactory loggerFactory)
         {
@@ -38,7 +40,7 @@ namespace Moesocks.Client.Services.Network
             _logger = loggerFactory.CreateLogger<ConnectionRouter>();
             _secSettings = securitySettings.Value;
             _platformProvider = platformProvider;
-            _secureTransport = new SecureTransportSession(new SecureTransportSessionSettings
+            _secureTransportActivator = () => new SecureTransportSession(new SecureTransportSessionSettings
             {
                 Certificate = new X509Certificate2(securitySettings.Value.ServerCertificateFileName, securitySettings.Value.ServerCertificatePassword),
                 MaxRandomBytesLength = securitySettings.Value.MaxRandomBytesLength,
@@ -46,7 +48,13 @@ namespace Moesocks.Client.Services.Network
             }, _loggerFactory);
             _httpProxySession = new HttpProxyProvider(settings.Value.Http, this, _loggerFactory);
             _socks5ProxySession = new Socks5ProxyProvider(this, _loggerFactory);
-            _requestDispather = new ActionBlock<(uint sessionKey, uint identifier, object message)>(DispatchRequest);
+            _requestDispather = new ActionBlock<(uint sessionKey, uint identifier, object message, Action onError)>(DispatchRequest, new ExecutionDataflowBlockOptions
+            {
+                SingleProducerConstrained = true,
+                MaxMessagesPerTask = 1,
+                MaxDegreeOfParallelism = 1,
+                EnsureOrdered = true
+            });
         }
 
         private readonly ConcurrentDictionary<uint, Action<uint, object>> _receivers = new ConcurrentDictionary<uint, Action<uint, object>>();
@@ -61,25 +69,45 @@ namespace Moesocks.Client.Services.Network
             _receivers.TryRemove(sessionKey, out var receiver);
         }
 
-        public async Task SendAsync(uint sessionKey, uint identifier, object message)
+        public async Task SendAsync(uint sessionKey, uint identifier, object message, Action onError)
         {
             if (!_requestDispather.Completion.IsCompleted)
-                await _requestDispather.SendAsync((sessionKey, identifier, message));
+                await _requestDispather.SendAsync((sessionKey, identifier, message, onError));
         }
 
-        private async Task DispatchRequest((uint sessionKey, uint identifier, object message) request)
+        private async Task DispatchRequest((uint sessionKey, uint identifier, object message, Action onError) request)
         {
             try
             {
+                await ConnectAsync();
                 _logger.LogDebug($"client: {request.sessionKey} Sending message {request.message} to server.");
                 await _serializer.Serialize(request.sessionKey, request.identifier, request.message, _secureTransport);
             }
             catch (Exception ex)
             {
                 _logger.LogError(0, ex.Message, ex);
-                _requestDispather.Complete();
-                _secureTransport.Reset();
-                throw;
+                request.onError();
+                _secureTransport?.Dispose();
+                _secureTransport = null;
+                await Task.Delay(200);
+            }
+        }
+
+        private async Task ConnectAsync()
+        {
+            await _transportSemp.WaitAsync();
+            try
+            {
+                if (_secureTransport == null)
+                {
+                    var secureTransport = _secureTransportActivator();
+                    await secureTransport.ConnectAsync();
+                    _secureTransport = secureTransport;
+                }
+            }
+            finally
+            {
+                _transportSemp.Release();
             }
         }
 
@@ -112,6 +140,7 @@ namespace Moesocks.Client.Services.Network
             {
                 try
                 {
+                    await ConnectAsync();
                     cancellationToken.ThrowIfCancellationRequested();
                     (var sessionKey, var identifier, var message) = await _serializer.Deserialize(_secureTransport);
                     cancellationToken.ThrowIfCancellationRequested();

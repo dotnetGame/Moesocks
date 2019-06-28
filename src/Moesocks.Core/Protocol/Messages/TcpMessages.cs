@@ -18,4 +18,9 @@ namespace Moesocks.Protocol.Messages
         public string Host;
         public ushort Port;
     }
+
+    [Message(Protocols.MessageType.TcpError, 1)]
+    public class TcpErrorMessage
+    {
+    }
 }

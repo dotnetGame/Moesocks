@@ -8,7 +8,7 @@
     }
   },
   "connectionRouter": {
-    "serverAddress": "ra.sunnycase.moe",
+    "serverAddress": "127.0.0.1",
     "serverPort": 8863,
     "http": {
       "localIPAddress": "127.0.0.1",

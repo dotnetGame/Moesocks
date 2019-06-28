@@ -30,7 +30,7 @@ namespace Moesocks.Server.Services.Security
         private readonly TcpClient _tcpClient;
 
         public SecureTransportSession(TcpClient tcpClient, SecureTransportSessionSettings settings, ILoggerFactory loggerFactory)
-            :base(settings.MaxRandomBytesLength, loggerFactory)
+            : base(loggerFactory)
         {
             _settings = settings;
             _tcpClient = tcpClient;

@@ -13,7 +13,8 @@ namespace Moesocks.Protocol
         public enum MessageType : ushort
         {
             TcpContent = 1,
-            TcpEndOfFile = 2
+            TcpEndOfFile = 2,
+            TcpError = 3
         }
     }
 

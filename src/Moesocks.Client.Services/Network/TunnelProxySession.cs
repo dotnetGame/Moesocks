@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moesocks.Protocol.Messages;
 using System.Linq;
+using System.Threading;
 
 namespace Moesocks.Client.Services.Network
 {
@@ -21,6 +22,8 @@ namespace Moesocks.Client.Services.Network
         private uint _identifier;
         private readonly uint _sessionKey;
         private byte[] _takenBytes;
+        private TaskCompletionSource<object> _receiveTcs;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
         public TunnelProxySession(string targetHost, ushort targetPort, Socket socket, Stream remoteStream, byte[] takenBytes, IMessageBus messageBus, ILoggerFactory loggerFactory)
         {
@@ -101,29 +104,60 @@ namespace Moesocks.Client.Services.Network
 
         private async Task RunMessageReceive()
         {
-            var completionSource = new TaskCompletionSource<object>();
+            _receiveTcs = new TaskCompletionSource<object>();
             _messageBus.BeginReceive(_sessionKey, async (identifier, message) =>
             {
-                switch (message)
+                try
                 {
-                    case TcpContentMessage contentMsg:
-                        await _remoteStream.WriteAsync(contentMsg.Content, 0, contentMsg.Content.Length);
-                        break;
-                    case TcpEndOfFileMessage _:
-                        _messageBus.EndReceive(_sessionKey);
-                        await _remoteStream.FlushAsync();
-                        _socket.Shutdown(SocketShutdown.Send);
-                        _remoteStream.Dispose();
-                        completionSource.SetResult(null);
-                        break;
-                    default:
-                        throw new InvalidOperationException("unrecognizable message.");
+                    switch (message)
+                    {
+                        case TcpContentMessage contentMsg:
+                            await _remoteStream.WriteAsync(contentMsg.Content, 0, contentMsg.Content.Length, _cancellationTokenSource.Token);
+                            break;
+                        case TcpEndOfFileMessage _:
+                            _messageBus.EndReceive(_sessionKey);
+                            await _remoteStream.FlushAsync();
+                            _socket.Shutdown(SocketShutdown.Send);
+                            _receiveTcs.SetResult(null);
+                            break;
+                        case TcpErrorMessage _:
+                            OnError();
+                            break;
+                        default:
+                            throw new InvalidOperationException("unrecognizable message.");
+                    }
+                }
+                catch
+                {
+                    OnError();
                 }
             });
-            await completionSource.Task;
+            await _receiveTcs.Task;
         }
 
         private readonly byte[] _readBuffer = new byte[1024 * 16];
+
+        private async void OnError()
+        {
+            try
+            {
+                await _messageBus.SendAsync(_sessionKey, _identifier++, new TcpErrorMessage(), () => { });
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                _messageBus.EndReceive(_sessionKey);
+                _cancellationTokenSource.Cancel(false);
+                _receiveTcs?.SetException(new TaskCanceledException());
+                _socket.Close();
+            }
+            catch
+            {
+            }
+        }
 
         private async Task RunClientRead()
         {
@@ -134,32 +168,40 @@ namespace Moesocks.Client.Services.Network
                     Host = _targetHost,
                     Port = _targetPort,
                     Content = _takenBytes
-                });
+                }, OnError);
             }
-            
-            while (true)
+
+            try
             {
-                var read = await _remoteStream.ReadAsync(_readBuffer, 0, _readBuffer.Length);
-                if (read == 0)
+
+                while (true)
                 {
-                    await _messageBus.SendAsync(_sessionKey, _identifier++, new TcpEndOfFileMessage
+                    var read = await _remoteStream.ReadAsync(_readBuffer, 0, _readBuffer.Length);
+                    if (read == 0)
                     {
-                        Host = _targetHost,
-                        Port = _targetPort
-                    });
-                    break;
-                }
-                else
-                {
-                    var dst = new byte[read];
-                    Array.Copy(_readBuffer, dst, read);
-                    await _messageBus.SendAsync(_sessionKey, _identifier++, new TcpContentMessage
+                        await _messageBus.SendAsync(_sessionKey, _identifier++, new TcpEndOfFileMessage
+                        {
+                            Host = _targetHost,
+                            Port = _targetPort
+                        }, OnError);
+                        break;
+                    }
+                    else
                     {
-                        Host = _targetHost,
-                        Port = _targetPort,
-                        Content = dst
-                    });
+                        var dst = new byte[read];
+                        Array.Copy(_readBuffer, dst, read);
+                        await _messageBus.SendAsync(_sessionKey, _identifier++, new TcpContentMessage
+                        {
+                            Host = _targetHost,
+                            Port = _targetPort,
+                            Content = dst
+                        }, OnError);
+                    }
                 }
+            }
+            catch
+            {
+                OnError();
             }
         }
     }

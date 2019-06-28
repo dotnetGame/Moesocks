@@ -7,7 +7,7 @@ namespace Moesocks.Client.Services.Network
 {
     interface IMessageBus
     {
-        Task SendAsync(uint sessionKey, uint identifier, object message);
+        Task SendAsync(uint sessionKey, uint identifier, object message, Action onError);
         void BeginReceive(uint sessionKey, Action<uint, object> receiver);
         void EndReceive(uint sessionKey);
     }

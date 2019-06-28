@@ -58,28 +58,20 @@ namespace Moesocks.Protocol
             if (attr == null)
                 throw new InvalidOperationException("message doesn't defined a MessageAttribute.");
 
-            await stream.ConnectAsync();
-            using (var packet = stream.BeginWritePacket())
+            await SerializePacket(new PacketHeader
             {
-                await SerializePacket(new PacketHeader
-                {
-                    ProtocolVersion = Protocols.ProtocolVersion,
-                    MessageType = attr.Id,
-                    MessageVersion = attr.Version,
-                    SessionKey = sessionKey,
-                    Identifier = identifier
-                }, message, stream);
-            }
+                ProtocolVersion = Protocols.ProtocolVersion,
+                MessageType = attr.Id,
+                MessageVersion = attr.Version,
+                SessionKey = sessionKey,
+                Identifier = identifier
+            }, message, stream);
         }
 
         public async Task<(uint sessionKey, uint identifier, object message)> Deserialize(SecureTransportSessionBase stream)
         {
-            await stream.ConnectAsync();
-            using (var packet = stream.BeginReadPacket())
-            {
-                (var header, var message) = await DeserializePacket(stream);
-                return (header.SessionKey, header.Identifier, message);
-            }
+            (var header, var message) = await DeserializePacket(stream);
+            return (header.SessionKey, header.Identifier, message);
         }
 
         private async Task SerializePacket(PacketHeader header, object message, Stream stream)

@@ -10,213 +10,168 @@ using System.Threading.Tasks;
 
 namespace Moesocks.Security
 {
-    public enum SecureTransportSessionState
-    {
-        Disconnected,
-        Connecting,
-        Connected,
-        Error
-    }
-
     public abstract class SecureTransportSessionBase : Stream
     {
-        public SecureTransportSessionState State { get; private set; } = SecureTransportSessionState.Disconnected;
-
-        public override bool CanRead => true;
-
-        public override bool CanSeek => false;
-
-        public override bool CanWrite => true;
-
-        public override long Length => throw new NotSupportedException();
-
-        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
-
         private Stream _netStream;
-        private readonly SecurePrefix _securePrefix;
         private readonly ILogger _logger;
-        private uint _readSurfix = 0;
-        private uint _writeSurfix = 0;
 
-        public SecureTransportSessionBase(ushort maxRandomBytesLength, ILoggerFactory loggerFactory)
+        public override bool CanRead => _netStream?.CanRead ?? throw new ObjectDisposedException("netStream");
+
+        public override bool CanSeek => _netStream?.CanSeek ?? throw new ObjectDisposedException("netStream");
+
+        public override bool CanWrite => _netStream?.CanWrite ?? throw new ObjectDisposedException("netStream");
+
+        public override long Length => _netStream?.Length ?? throw new ObjectDisposedException("netStream");
+
+        public override bool CanTimeout => _netStream?.CanTimeout ?? throw new ObjectDisposedException("netStream");
+
+        public override int ReadTimeout
+        {
+            get => _netStream?.ReadTimeout ?? throw new ObjectDisposedException("netStream");
+            set
+            {
+                CheckDisposed();
+                _netStream.ReadTimeout = value;
+            }
+        }
+
+        public override int WriteTimeout
+        {
+            get => _netStream?.WriteTimeout ?? throw new ObjectDisposedException("netStream");
+            set
+            {
+                CheckDisposed();
+                _netStream.WriteTimeout = value;
+            }
+        }
+
+        public override long Position
+        {
+            get => _netStream?.Position ?? throw new ObjectDisposedException("netStream");
+            set
+            {
+                CheckDisposed();
+                _netStream.Position = value;
+            }
+        }
+
+        public SecureTransportSessionBase(ILoggerFactory loggerFactory)
         {
             _logger = loggerFactory.CreateLogger<SecureTransportSessionBase>();
-            _securePrefix = new SecurePrefix(maxRandomBytesLength, loggerFactory);
         }
 
-        public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken token)
+        public async Task ConnectAsync()
         {
-            if (State != SecureTransportSessionState.Connected)
-                throw new InvalidOperationException();
-            await DispatchWriteAsync(buffer, offset, count, token);
-        }
-
-        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken token)
-        {
-            if (State != SecureTransportSessionState.Connected)
-                throw new InvalidOperationException();
-            return await DispatchReadAsync(buffer, offset, count, token);
-        }
-
-        private async Task DispatchWriteAsync(byte[] buffer, int offset, int count, CancellationToken token)
-        {
-            try
-            {
-                if (_writeSurfix != 0)
-                {
-                    await _securePrefix.WriteAsync(_netStream);
-                    --_writeSurfix;
-                }
-                await _netStream.WriteAsync(buffer, offset, count, token);
-            }
-            catch
-            {
-                State = SecureTransportSessionState.Error;
-                throw;
-            }
-        }
-
-        private async Task<int> DispatchReadAsync(byte[] buffer, int offset, int count, CancellationToken token)
-        {
-            try
-            {
-                if (_readSurfix != 0)
-                {
-                    await _securePrefix.ReadAsync(_netStream);
-                    _readSurfix--;
-                }
-                return await _netStream.ReadAsync(buffer, offset, count, token);
-            }
-            catch
-            {
-                State = SecureTransportSessionState.Error;
-                throw;
-            }
-        }
-
-        private async Task ConnectAsyncCore()
-        {
-            if (State == SecureTransportSessionState.Connected)
-                return;
-            if (State == SecureTransportSessionState.Connecting)
-                throw new InvalidOperationException("Concurrent operation is not supported.");
-            try
-            {
-                State = SecureTransportSessionState.Disconnected;
-                _readSurfix = _writeSurfix = 0;
-                State = SecureTransportSessionState.Connecting;
-                _logger.LogInformation($"Connecting...");
-                _netStream?.Dispose();
-                _netStream = await AuthenticateAsync();
-                State = SecureTransportSessionState.Connected;
-                _logger.LogInformation($"Connected");
-            }
-            catch
-            {
-                State = SecureTransportSessionState.Error;
-                throw;
-            }
-        }
-
-        private Task _connectTask;
-        private readonly object _connectTaskLocker = new object();
-
-        public void Reset()
-        {
-            State = SecureTransportSessionState.Disconnected;
-        }
-
-        public Task ConnectAsync()
-        {
-            lock(_connectTaskLocker)
-            {
-                if (_connectTask == null || State == SecureTransportSessionState.Disconnected ||
-                    State == SecureTransportSessionState.Error)
-                    return _connectTask = ConnectAsyncCore();
-                else
-                    return _connectTask;
-            }
+            _netStream = await AuthenticateAsync();
         }
 
         protected abstract Task<Stream> AuthenticateAsync();
 
-        internal BeginWritePacketScope BeginWritePacket()
-        {
-            return new BeginWritePacketScope(this);
-        }
-
-        internal BeginReadPacketScope BeginReadPacket()
-        {
-            return new BeginReadPacketScope(this);
-        }
-
-        internal struct BeginWritePacketScope : IDisposable
-        {
-            private readonly SecureTransportSessionBase _session;
-            public BeginWritePacketScope(SecureTransportSessionBase session)
-            {
-                _session = session;
-                _session._writeSurfix++;
-            }
-
-            public void Dispose()
-            {
-
-            }
-        }
-
-        internal struct BeginReadPacketScope : IDisposable
-        {
-            private readonly SecureTransportSessionBase _session;
-            public BeginReadPacketScope(SecureTransportSessionBase session)
-            {
-                _session = session;
-                _session._readSurfix++;
-            }
-
-            public void Dispose()
-            {
-
-            }
-        }
-
         public override void Flush()
         {
-            throw new NotSupportedException();
-        }
-
-        public override Task FlushAsync(CancellationToken cancellationToken)
-        {
-            return _netStream.FlushAsync();
-        }
-
-        public override int Read(byte[] buffer, int offset, int count)
-        {
-            throw new NotSupportedException();
+            CheckDisposed();
+            _netStream.Flush();
         }
 
         public override long Seek(long offset, SeekOrigin origin)
         {
-            throw new NotSupportedException();
+            CheckDisposed();
+            return _netStream.Seek(offset, origin);
         }
 
         public override void SetLength(long value)
         {
-            throw new NotSupportedException();
+            CheckDisposed();
+            _netStream.SetLength(value);
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            CheckDisposed();
+            return _netStream.Read(buffer, offset, count);
         }
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            throw new NotSupportedException();
+            CheckDisposed();
+            _netStream.Write(buffer, offset, count);
+        }
+
+        public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+        {
+            CheckDisposed();
+            return _netStream.BeginRead(buffer, offset, count, callback, state);
+        }
+
+        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+        {
+            CheckDisposed();
+            return _netStream.BeginWrite(buffer, offset, count, callback, state);
+        }
+
+        public override void Close()
+        {
+            _netStream?.Close();
+        }
+
+        public override Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
+        {
+            CheckDisposed();
+            return _netStream.CopyToAsync(destination, bufferSize, cancellationToken);
         }
 
         protected override void Dispose(bool disposing)
         {
             if (disposing)
-            {
                 _netStream?.Dispose();
-                _netStream = null;
-            }
+        }
+
+        public override int EndRead(IAsyncResult asyncResult)
+        {
+            CheckDisposed();
+            return _netStream.EndRead(asyncResult);
+        }
+
+        public override void EndWrite(IAsyncResult asyncResult)
+        {
+            CheckDisposed();
+            _netStream.EndWrite(asyncResult);
+        }
+
+        public override Task FlushAsync(CancellationToken cancellationToken)
+        {
+            CheckDisposed();
+            return _netStream.FlushAsync(cancellationToken);
+        }
+
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            CheckDisposed();
+            return _netStream.ReadAsync(buffer, offset, count, cancellationToken);
+        }
+
+        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            CheckDisposed();
+            return _netStream.WriteAsync(buffer, offset, count, cancellationToken);
+        }
+
+        public override void WriteByte(byte value)
+        {
+            CheckDisposed();
+            _netStream.WriteByte(value);
+        }
+
+        public override int ReadByte()
+        {
+            CheckDisposed();
+            return _netStream.ReadByte();
+        }
+
+        private void CheckDisposed()
+        {
+            if (_netStream == null)
+                throw new ObjectDisposedException("netStream");
         }
     }
 }

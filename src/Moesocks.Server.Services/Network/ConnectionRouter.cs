@@ -75,6 +75,7 @@ namespace Moesocks.Server.Services.Network
                         MaxRandomBytesLength = _secSettings.MaxRandomBytesLength
                     }, _loggerFactory))
                     {
+                        await transport.ConnectAsync();
                         var session = new ProxySession(transport, _loggerFactory);
                         await session.Run(token);
                     }
